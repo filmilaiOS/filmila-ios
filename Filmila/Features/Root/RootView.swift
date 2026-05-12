@@ -1,30 +1,33 @@
 import SwiftUI
 
 struct RootView: View {
-    @StateObject private var homeViewModel: HomeViewModel
-
-    init(container: any AppContainer) {
-        _homeViewModel = StateObject(wrappedValue: HomeViewModel(filmCatalog: container.filmCatalog))
-    }
+    @EnvironmentObject private var auth: AuthService
+    @Environment(\.container) private var container
 
     var body: some View {
-        NavigationStack {
-            HomeView(viewModel: homeViewModel)
+        Group {
+            if auth.isLoading {
+                SplashView()
+            } else if auth.session == nil {
+                AuthNavigationStack()
+            } else {
+                MainTabView(container: container)
+            }
+        }
+        .task {
+            await auth.restoreSession()
         }
     }
 }
 
 #if DEBUG
-private struct PreviewRootContainer: AppContainer {
-    let filmCatalog: FilmCatalogServing
-
-    init() {
-        filmCatalog = PreviewFilmCatalogService()
-    }
-}
-
 #Preview {
-    RootView(container: PreviewRootContainer())
+    let container = PreviewContainer()
+    RootView()
+        .environment(\.container, container)
+        .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
+        .environmentObject(container.pathMonitor)
+        .environmentObject(container.deepLinkHandler)
         .preferredColorScheme(.dark)
 }
 #endif

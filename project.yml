@@ -2,6 +2,9 @@ name: Filmila
 options:
   bundleIdPrefix: com.filmila
   developmentLanguage: en
+  knownRegions:
+    - en
+    - ar
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
@@ -37,6 +40,9 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIRequiresFullScreen: YES
+        ENABLE_TESTABILITY: YES
+    entitlements:
+      path: Filmila/Supporting/Filmila.entitlements
     info:
       path: Filmila/Supporting/Info.plist
       properties:
@@ -44,6 +50,7 @@ targets:
         CFBundleDisplayName: Filmila
         SUPABASE_URL: $(FILMILA_SUPABASE_URL)
         SUPABASE_ANON_KEY: $(FILMILA_SUPABASE_ANON_KEY)
+        API_BASE_URL: $(FILMILA_API_BASE_URL)
         UILaunchScreen:
           UILaunchScreen_Generation: YES
         UISupportedInterfaceOrientations:
@@ -55,4 +62,18 @@ targets:
               - UISceneConfigurationName: Default Configuration
                 UISceneDelegateClassName: ""
     scheme:
-      testTargets: []
+      testTargets:
+        - FilmilaTests
+  FilmilaTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Tests/Unit
+    dependencies:
+      - target: Filmila
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.filmila.app.tests
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"

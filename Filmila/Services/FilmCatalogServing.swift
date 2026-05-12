@@ -8,11 +8,11 @@ enum FilmCatalogError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .supabaseNotConfigured:
-            return "Supabase is not configured."
+            return String(localized: "error_film_catalog_supabase_not_configured")
         case .notSignedIn:
-            return "You must be signed in to watch paid films."
+            return String(localized: "error_film_catalog_not_signed_in")
         case .decodingFailed:
-            return "Could not read film data."
+            return String(localized: "error_film_catalog_decoding_failed")
         }
     }
 }
