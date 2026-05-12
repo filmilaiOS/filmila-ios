@@ -1,0 +1,8 @@
+"app_name" = "Filmila";
+"home_title" = "Discover";
+"home_empty" = "No films yet.";
+"home_error" = "Something went wrong.";
+"home_retry" = "Try again";
+"config_error" = "Check Supabase URL and anon key in the xcconfig files.";
+"price_free" = "Free to watch";
+"price_paid" = "Purchase on iOS to unlock";

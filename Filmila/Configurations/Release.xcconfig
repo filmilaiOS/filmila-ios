@@ -1,0 +1,3 @@
+// Set production Supabase values in Xcode build settings or override this file.
+FILMILA_SUPABASE_URL = https://YOUR_PROJECT_REF.supabase.co
+FILMILA_SUPABASE_ANON_KEY = YOUR_SUPABASE_ANON_KEY

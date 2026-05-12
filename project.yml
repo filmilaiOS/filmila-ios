@@ -1,0 +1,58 @@
+name: Filmila
+options:
+  bundleIdPrefix: com.filmila
+  developmentLanguage: en
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.0.0
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+targets:
+  Filmila:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    configFiles:
+      Debug: Filmila/Configurations/Debug.xcconfig
+      Release: Filmila/Configurations/Release.xcconfig
+    sources:
+      - path: Filmila
+        excludes:
+          - "**/*.xcconfig"
+    dependencies:
+      - package: Supabase
+        product: Supabase
+    settings:
+      base:
+        INFOPLIST_KEY_CFBundleDisplayName: Filmila
+        PRODUCT_BUNDLE_IDENTIFIER: com.filmila.app
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+    info:
+      path: Filmila/Supporting/Info.plist
+      properties:
+        CFBundleName: Filmila
+        CFBundleDisplayName: Filmila
+        SUPABASE_URL: $(FILMILA_SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(FILMILA_SUPABASE_ANON_KEY)
+        UILaunchScreen:
+          UILaunchScreen_Generation: YES
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: ""
+    scheme:
+      testTargets: []
