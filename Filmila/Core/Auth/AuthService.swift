@@ -2,6 +2,17 @@ import Combine
 import Foundation
 import Supabase
 
+private func isTransientNetworkFailure(_ error: Error) -> Bool {
+    if error is CancellationError { return true }
+    if error is URLError { return true }
+    let ns = error as NSError
+    if ns.domain == NSURLErrorDomain { return true }
+    if let underlying = ns.userInfo[NSUnderlyingErrorKey] as? Error {
+        return isTransientNetworkFailure(underlying)
+    }
+    return false
+}
+
 enum AuthServiceError: LocalizedError, Equatable {
     case viewerRoleRequired
     case profileNotFound
@@ -17,10 +28,10 @@ enum AuthServiceError: LocalizedError, Equatable {
 }
 
 enum AuthViewerRoleValidator {
-    /// Throws `AuthServiceError.viewerRoleRequired` when the profile role is not a viewer.
-    static func requireViewerRole(_ rawRole: String) throws {
+    /// Throws `AuthServiceError.viewerRoleRequired` when the profile role is not allowed for this app.
+    static func requireAllowedProfileRole(_ rawRole: String) throws {
         let normalized = rawRole.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard normalized == "VIEWER" else {
+        guard normalized == "VIEWER" || normalized == "FILMMAKER" else {
             throw AuthServiceError.viewerRoleRequired
         }
     }
@@ -88,6 +99,11 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         await MainActor.run { self.session = newSession }
         do {
             try await loadProfile(userId: newSession.user.id)
+#if DEBUG
+            let publishedSession = await MainActor.run { self.session }
+            let role = await MainActor.run { self.profile?.role ?? "(no profile yet)" }
+            print("[FilmilaAuth] login succeeded — userId=\(newSession.user.id.uuidString) publishedSession=\(publishedSession != nil ? "set" : "nil") profile.role=\(role)")
+#endif
         } catch {
             await MainActor.run {
                 self.session = nil
@@ -126,13 +142,76 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
     }
 
     func restoreSession() async {
+#if DEBUG
+        print("[FilmilaAuth] restoreSession ENTER instance=\(ObjectIdentifier(self))")
+#endif
         await MainActor.run { isLoading = true }
-        defer { Task { await MainActor.run { self.isLoading = false } } }
+        defer {
+            Task { @MainActor in
+                self.isLoading = false
+#if DEBUG
+                print("[FilmilaAuth] restoreSession EXIT instance=\(ObjectIdentifier(self)) sessionNil=\(self.session == nil)")
+#endif
+            }
+        }
+
+        let current: Session
         do {
-            let current = try await supabaseManager.client.auth.session
-            await MainActor.run { self.session = current }
-            try await loadProfile(userId: current.user.id)
+            var session = try await supabaseManager.client.auth.session
+            if session.isExpired {
+                do {
+                    session = try await supabaseManager.client.auth.refreshSession()
+                } catch {
+#if DEBUG
+                    print("[FilmilaAuth] restoreSession refresh failed (expired session): \(error)")
+#endif
+                    await MainActor.run {
+                        self.session = nil
+                        self.profile = nil
+                    }
+                    return
+                }
+            }
+            current = session
+        } catch is CancellationError {
+#if DEBUG
+            print("[FilmilaAuth] restoreSession cancelled while reading client.session")
+#endif
+            return
         } catch {
+#if DEBUG
+            print("[FilmilaAuth] restoreSession no stored session / error: \(error) — clearing local session state")
+#endif
+            await MainActor.run {
+                self.session = nil
+                self.profile = nil
+            }
+            return
+        }
+
+        await MainActor.run { self.session = current }
+#if DEBUG
+        print("[FilmilaAuth] restoreSession loaded client.session userId=\(current.user.id.uuidString)")
+#endif
+
+        do {
+            try await loadProfile(userId: current.user.id)
+        } catch is CancellationError {
+#if DEBUG
+            print("[FilmilaAuth] restoreSession cancelled during loadProfile")
+#endif
+            return
+        } catch {
+            // Keep the Supabase session on flaky networks so a successful sign-in is not wiped.
+            if isTransientNetworkFailure(error) {
+#if DEBUG
+                print("[FilmilaAuth] restoreSession loadProfile transient error, keeping session: \(error)")
+#endif
+                return
+            }
+#if DEBUG
+            print("[FilmilaAuth] restoreSession loadProfile failed — clearing session: \(error)")
+#endif
             await MainActor.run {
                 self.session = nil
                 self.profile = nil
@@ -162,11 +241,16 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
                 .execute()
                 .value
         } catch {
+            if isTransientNetworkFailure(error) { throw error }
             throw AuthServiceError.profileNotFound
         }
 
+#if DEBUG
+        print("[FilmilaAuth] loadProfile raw role from Supabase (before role guard): \(String(reflecting: loaded.role))")
+#endif
+
         do {
-            try AuthViewerRoleValidator.requireViewerRole(loaded.role)
+            try AuthViewerRoleValidator.requireAllowedProfileRole(loaded.role)
         } catch {
             try? await supabaseManager.client.auth.signOut()
             await MainActor.run {

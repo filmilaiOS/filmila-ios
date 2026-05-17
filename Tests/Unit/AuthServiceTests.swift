@@ -3,12 +3,17 @@ import XCTest
 
 final class AuthServiceTests: XCTestCase {
     func testInvalidRoleThrowsViewerRoleRequired() {
-        XCTAssertThrowsError(try AuthViewerRoleValidator.requireViewerRole("ADMIN")) { error in
+        XCTAssertThrowsError(try AuthViewerRoleValidator.requireAllowedProfileRole("ADMIN")) { error in
             XCTAssertEqual(error as? AuthServiceError, .viewerRoleRequired)
         }
     }
 
     func testWhitespacePaddedViewerRoleAccepted() throws {
-        XCTAssertNoThrow(try AuthViewerRoleValidator.requireViewerRole("  viewer  "))
+        XCTAssertNoThrow(try AuthViewerRoleValidator.requireAllowedProfileRole("  viewer  "))
+    }
+
+    func testFilmmakerRoleAccepted() throws {
+        XCTAssertNoThrow(try AuthViewerRoleValidator.requireAllowedProfileRole("FILMMAKER"))
+        XCTAssertNoThrow(try AuthViewerRoleValidator.requireAllowedProfileRole("  filmmaker  "))
     }
 }

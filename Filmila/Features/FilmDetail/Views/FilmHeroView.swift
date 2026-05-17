@@ -8,13 +8,7 @@ struct FilmHeroView: View {
     }
 
     private var durationText: String? {
-        guard let seconds = film.duration, seconds > 0 else { return nil }
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        if hours > 0 {
-            return String(format: String(localized: "detail_duration_hm"), hours, minutes)
-        }
-        return String(format: String(localized: "detail_duration_m"), minutes)
+        film.formattedDurationForListing
     }
 
     var body: some View {

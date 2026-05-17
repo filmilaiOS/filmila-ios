@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject private var auth: AuthService
     @StateObject private var vm: HomeViewModel
 
     init(container: AppContainer) {
@@ -9,8 +10,12 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 0) {
-                HeroCarouselView(films: vm.featured, isLoading: vm.isLoading)
+            LazyVStack(alignment: .leading, spacing: 0) {
+                HeroCarouselView(
+                    films: vm.featured,
+                    isLoading: vm.isLoading,
+                    averageRatingByFilmId: vm.averageRatingByFilmId
+                )
 
                 if let error = vm.error {
                     VStack(spacing: Spacing.sm) {
@@ -24,21 +29,32 @@ struct HomeView: View {
                         .font(.filmilaBodyMedium)
                         .foregroundStyle(FilmilaColors.accent)
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(Spacing.lg)
                 }
 
-                ContinueWatchingRow(items: vm.continueWatchingItems)
+                ContinueWatchingRow(
+                    items: vm.continueWatchingItems,
+                    averageRatingByFilmId: vm.averageRatingByFilmId
+                )
 
-                FilmRowSection(title: String(localized: "home_trending"), films: vm.trending)
-                FilmRowSection(title: String(localized: "home_new_arrivals"), films: vm.recentlyAdded)
+                FilmRowSection(
+                    title: String(localized: "home_recommended"),
+                    films: vm.recentlyAdded,
+                    averageRatingByFilmId: vm.averageRatingByFilmId
+                )
+                FilmRowSection(
+                    title: String(localized: "home_trending"),
+                    films: vm.trending,
+                    averageRatingByFilmId: vm.averageRatingByFilmId
+                )
             }
         }
         .ignoresSafeArea(edges: .top)
         .background(FilmilaColors.background.ignoresSafeArea())
-        .navigationTitle(String(localized: "home_title"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .task {
+        .toolbar(.hidden, for: .navigationBar)
+        .task(id: auth.session?.user.id) {
+            guard auth.session != nil else { return }
             await vm.loadAll()
         }
     }
@@ -50,6 +66,7 @@ struct HomeView: View {
         HomeView(container: PreviewContainer())
     }
     .environment(\.container, PreviewContainer())
+    .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
     .preferredColorScheme(.dark)
 }
 #endif

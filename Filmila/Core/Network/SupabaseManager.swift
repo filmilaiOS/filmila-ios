@@ -11,7 +11,8 @@ final class SupabaseManager {
         let anonKey = Env.supabaseAnonKey
         let options = SupabaseClientOptions(
             auth: SupabaseClientOptions.AuthOptions(
-                storage: KeychainLocalStorage()
+                storage: KeychainLocalStorage(),
+                emitLocalSessionAsInitialSession: true
             )
         )
         client = Supabase.SupabaseClient(supabaseURL: url, supabaseKey: anonKey, options: options)

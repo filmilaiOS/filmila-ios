@@ -34,8 +34,13 @@ struct FilmilaColors {
     static let overlayScrim = Color.black.opacity(0.45)
     /// Offline / status banner backdrop.
     static let networkBannerScrim = Color.black.opacity(0.8)
-    /// Hero carousel inactive page dot.
-    static let pageDotInactive = Color.white.opacity(0.3)
+    /// Hero carousel inactive page dot (outline style drawn in views).
+    static let pageDotInactive = Color.white.opacity(0.35)
+    /// Hero “Watch” pill (light fill on dark hero).
+    static let heroWatchButtonFill = Color.white
+    static let heroWatchButtonForeground = Color(hex: "#0A0A0A")
+    /// Poster duration / rating capsule backdrop.
+    static let posterBadgeBackdrop = Color.black.opacity(0.55)
     /// Shimmer highlight band (low / mid for gradient).
     static let shimmerBandLow = Color.white.opacity(0.06)
     static let shimmerBandMid = Color.white.opacity(0.22)

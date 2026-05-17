@@ -162,6 +162,13 @@ private final class PreviewFilmsRepository: FilmsRepositoryProtocol {
         (4.2, 12)
     }
 
+    func fetchAverageRatings(forFilmIds ids: [Int]) async throws -> [Int: Double] {
+        let unique = Array(Set(ids))
+        return Dictionary(uniqueKeysWithValues: unique.map { id in
+            (id, 3.5 + Double(id % 5) * 0.1)
+        })
+    }
+
     func fetchUserFilmRating(filmId: Int) async throws -> Int? {
         userRatingByFilm[filmId]
     }

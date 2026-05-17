@@ -36,7 +36,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         case genre
         case duration
         case viewCount = "view_count"
-        case createdAt = "created_at"
+        case createdAt = "updated_at"
     }
 
     init(
@@ -52,7 +52,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         status: FilmStatus,
         genre: String? = nil,
         duration: Int? = nil,
-        viewCount: Int,
+        viewCount: Int = 0,
         createdAt: Date
     ) {
         self.id = id

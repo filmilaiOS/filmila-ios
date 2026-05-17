@@ -1,7 +1,9 @@
 import Foundation
 
 final class LiveAppContainer: AppContainer {
-    let auth: AuthService
+    /// Lazily created once; `authService` and `FilmilaApp`’s `@StateObject` must use this same instance.
+    lazy var sharedAuthService: AuthService = AuthService()
+    var authService: AuthServiceProtocol { sharedAuthService }
     let pathMonitor: NetworkMonitor
     let deepLinkHandler = DeepLinkHandler()
 
@@ -9,11 +11,8 @@ final class LiveAppContainer: AppContainer {
     private let notificationsRepository = LiveNotificationsRepository()
 
     init() {
-        auth = AuthService()
         pathMonitor = NetworkMonitor()
     }
-
-    var authService: AuthServiceProtocol { auth }
     var filmsRepo: FilmsRepositoryProtocol { filmsRepository }
     lazy var progressRepo: ProgressRepositoryProtocol = LiveProgressRepository()
     private lazy var userRepository = LiveUserRepository()

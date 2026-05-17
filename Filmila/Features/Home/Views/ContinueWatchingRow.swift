@@ -2,34 +2,40 @@ import SwiftUI
 
 struct ContinueWatchingRow: View {
     let items: [ContinueWatchingItem]
+    var averageRatingByFilmId: [Int: Double] = [:]
     @Environment(\.container) private var container
 
     var body: some View {
         if !items.isEmpty {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: Spacing.md) {
                 Text(String(localized: "home_continue_watching"))
-                    .font(.filmilaTitleSm)
+                    .font(.filmilaLabel)
                     .foregroundStyle(FilmilaColors.textPrimary)
+                    .tracking(2.2)
                     .padding(.horizontal, Spacing.lg)
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: Spacing.md) {
+                    LazyHStack(alignment: .top, spacing: Spacing.md) {
                         ForEach(items) { item in
-                            ContinueWatchingCard(item: item)
+                            ContinueWatchingCard(
+                                item: item,
+                                averageRating: averageRatingByFilmId[item.film.id]
+                            )
                         }
                     }
                     .padding(.horizontal, Spacing.lg)
                 }
             }
-            .padding(.top, Spacing.md)
+            .padding(.top, Spacing.xl)
         }
     }
 }
 
 private struct ContinueWatchingCard: View {
     let item: ContinueWatchingItem
+    var averageRating: Double?
     @Environment(\.container) private var container
-    private let cardWidth: CGFloat = 140
+    private let cardWidth: CGFloat = 130
 
     private var progress: CGFloat {
         guard let duration = item.film.duration, duration > 0 else { return 0 }
@@ -40,18 +46,12 @@ private struct ContinueWatchingCard: View {
         NavigationLink {
             FilmDetailView(filmId: item.film.id, container: container)
         } label: {
-            FilmPosterCard(film: item.film, width: cardWidth)
-                .overlay(alignment: .bottom) {
-                    ZStack(alignment: .leading) {
-                        Rectangle()
-                            .fill(FilmilaColors.overlayScrim)
-                            .frame(height: 4)
-                        Rectangle()
-                            .fill(FilmilaColors.accent)
-                            .frame(width: max(0, cardWidth * progress), height: 2)
-                    }
-                    .frame(width: cardWidth, height: 4)
-                }
+            FilmPosterCard(
+                film: item.film,
+                width: cardWidth,
+                averageRating: averageRating,
+                bottomProgress: progress
+            )
         }
         .buttonStyle(.plain)
     }
@@ -69,6 +69,7 @@ private struct ContinueWatchingCard: View {
                         thumbnailUrl: "https://picsum.photos/seed/cw/400/600",
                         price: 9,
                         status: .approved,
+                        genre: "Sci-Fi",
                         duration: 3600,
                         viewCount: 0,
                         createdAt: Date()
@@ -79,7 +80,8 @@ private struct ContinueWatchingCard: View {
                         progressSeconds: 900
                     )
                 )
-            ]
+            ],
+            averageRatingByFilmId: [1: 4.0]
         )
     }
     .environment(\.container, PreviewContainer())

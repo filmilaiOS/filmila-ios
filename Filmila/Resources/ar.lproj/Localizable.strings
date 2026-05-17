@@ -60,10 +60,13 @@
 "home_continue_watching" = "متابعة المشاهدة";
 "home_empty" = "لا توجد أفلام بعد.";
 "home_error" = "حدث خطأ ما.";
+"home_hero_label_prefix" = "مميز";
 "home_new_arrivals" = "وصل حديثاً";
+"home_recommended" = "موصى به";
 "home_retry" = "إعادة المحاولة";
 "home_title" = "اكتشف";
-"home_trending" = "الأكثر مشاهدة";
+"home_trending" = "الأكثر رواجاً";
+"home_watch" = "شاهد";
 "iap_cancelled" = "تم إلغاء الشراء.";
 "iap_not_signed_in" = "سجّل الدخول لإتمام الشراء.";
 "iap_pending" = "الشراء قيد الموافقة.";

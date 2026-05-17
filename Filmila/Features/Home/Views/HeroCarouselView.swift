@@ -4,77 +4,78 @@ import UIKit
 struct HeroCarouselView: View {
     let films: [Film]
     var isLoading: Bool = false
+    var averageRatingByFilmId: [Int: Double] = [:]
 
     @State private var currentIndex = 0
-    @State private var autoScrollTimer: Timer?
 
-    private var heroHeight: CGFloat {
-        UIScreen.main.bounds.height * 0.70
+    private var heroImageHeight: CGFloat {
+        UIScreen.main.bounds.height * 0.65
+    }
+
+    private var showsCarousel: Bool {
+        !films.isEmpty || isLoading
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        VStack(spacing: Spacing.sm) {
             if isLoading && films.isEmpty {
-                LoadingShimmer(width: nil, height: heroHeight, cornerRadius: 0)
-                    .frame(height: heroHeight)
+                LoadingShimmer(width: nil, height: heroImageHeight, cornerRadius: 0)
+                    .frame(height: heroImageHeight)
             } else if films.isEmpty {
                 Color.clear.frame(height: 0)
             } else {
                 TabView(selection: $currentIndex) {
                     ForEach(Array(films.enumerated()), id: \.element.id) { index, film in
-                        HeroFilmSlide(film: film)
-                            .tag(index)
+                        HeroFilmSlide(
+                            film: film,
+                            averageRating: averageRatingByFilmId[film.id]
+                        )
+                        .tag(index)
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .frame(height: heroHeight)
+                .frame(height: heroImageHeight)
 
-                HStack(spacing: 6) {
-                    ForEach(0..<films.count, id: \.self) { i in
-                        Circle()
-                            .fill(i == currentIndex ? FilmilaColors.accent : FilmilaColors.pageDotInactive)
-                            .frame(width: i == currentIndex ? 6 : 4, height: i == currentIndex ? 6 : 4)
+                pageIndicator
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: showsCarousel ? heroImageHeight + (films.isEmpty ? 0 : 22) : 0)
+        .task(id: films.map(\.id)) {
+            guard films.count > 1 else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                guard !Task.isCancelled else { break }
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.45)) {
+                        currentIndex = (currentIndex + 1) % films.count
                     }
                 }
-                .padding(.bottom, Spacing.lg)
             }
         }
-        .frame(height: films.isEmpty && !isLoading ? 0 : heroHeight)
-        .onAppear {
-            startTimerIfNeeded()
-        }
-        .onChange(of: films) { _ in
-            if currentIndex >= films.count {
-                currentIndex = max(0, films.count - 1)
+        .onChange(of: films.count) { newCount in
+            if currentIndex >= newCount {
+                currentIndex = max(0, newCount - 1)
             }
-            restartTimer()
-        }
-        .onDisappear {
-            stopTimer()
         }
     }
 
-    private func startTimerIfNeeded() {
-        stopTimer()
-        guard films.count > 1 else { return }
-        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 6, repeats: true) { _ in
-            Task { @MainActor in
-                currentIndex = (currentIndex + 1) % films.count
+    private var pageIndicator: some View {
+        HStack(spacing: 7) {
+            ForEach(0..<films.count, id: \.self) { i in
+                if i == currentIndex {
+                    Circle()
+                        .fill(FilmilaColors.textPrimary)
+                        .frame(width: 7, height: 7)
+                } else {
+                    Circle()
+                        .stroke(FilmilaColors.textPrimary.opacity(0.9), lineWidth: 1.5)
+                        .frame(width: 6, height: 6)
+                }
             }
         }
-        autoScrollTimer?.tolerance = 0.2
-        if let timer = autoScrollTimer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
-    }
-
-    private func restartTimer() {
-        startTimerIfNeeded()
-    }
-
-    private func stopTimer() {
-        autoScrollTimer?.invalidate()
-        autoScrollTimer = nil
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, Spacing.xs)
     }
 }
 
@@ -104,7 +105,8 @@ struct HeroCarouselView: View {
                 viewCount: 2,
                 createdAt: Date()
             )
-        ]
+        ],
+        averageRatingByFilmId: [1: 4.2, 2: 3.9]
     )
     .preferredColorScheme(.dark)
 }

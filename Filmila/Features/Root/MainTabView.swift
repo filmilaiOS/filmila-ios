@@ -27,6 +27,7 @@ struct MainTabView: View {
         appearance.backgroundColor = UIColor(FilmilaColors.surface)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().unselectedItemTintColor = UIColor(FilmilaColors.textMuted)
     }
 
     var body: some View {

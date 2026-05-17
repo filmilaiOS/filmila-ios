@@ -21,6 +21,8 @@ protocol FilmsRepositoryProtocol: AnyObject {
     func fetchFilms(byIds ids: [Int]) async throws -> [Film]
     func fetchCommentsWithAuthors(filmId: Int) async throws -> [CommentDisplay]
     func fetchFilmRatingsAggregate(filmId: Int) async throws -> (average: Double, count: Int)
+    /// Average star value (1…5) per film id for the given ids; films with no ratings are omitted.
+    func fetchAverageRatings(forFilmIds ids: [Int]) async throws -> [Int: Double]
     func fetchUserFilmRating(filmId: Int) async throws -> Int?
     func upsertUserFilmRating(filmId: Int, rating: Int) async throws
     func insertComment(filmId: Int, text: String) async throws
@@ -31,8 +33,9 @@ protocol FilmsRepositoryProtocol: AnyObject {
 /// Supabase tables assumed: `films`, `film_watchlist` (`user_id`, `film_id`), `film_favorites` (`user_id`, `film_id`),
 /// `comments`, `film_ratings`, `profiles`.
 final class LiveFilmsRepository: FilmsRepositoryProtocol {
+    /// Columns confirmed on the `films` table (avoid selecting or ordering by missing columns).
     private let filmSelectColumns =
-        "id,title,title_ar,description,description_ar,thumbnail_url,hls_url,video_url,price,status,genre,duration,view_count,created_at"
+        "id,title,description,thumbnail_url,video_url,price,status,genre,duration,updated_at"
 
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
@@ -74,14 +77,14 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         if let genre, !genre.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             q = q.eq("genre", value: genre.trimmingCharacters(in: .whitespacesAndNewlines))
         }
-        return try await q.order("view_count", ascending: false).execute().value
+        return try await q.order("updated_at", ascending: false).execute().value
     }
 
     func fetchFeatured() async throws -> [Film] {
         try await client.from("films")
             .select(filmSelectColumns)
             .eq("status", value: "approved")
-            .order("view_count", ascending: false)
+            .order("updated_at", ascending: false)
             .limit(5)
             .execute()
             .value
@@ -91,7 +94,7 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         try await client.from("films")
             .select(filmSelectColumns)
             .eq("status", value: "approved")
-            .order("view_count", ascending: false)
+            .order("updated_at", ascending: false)
             .limit(20)
             .execute()
             .value
@@ -210,6 +213,33 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         return (Double(sum) / Double(rows.count), rows.count)
     }
 
+    func fetchAverageRatings(forFilmIds ids: [Int]) async throws -> [Int: Double] {
+        let unique = Array(Set(ids))
+        guard !unique.isEmpty else { return [:] }
+
+        struct Row: Decodable {
+            let filmId: Int
+            let rating: Int
+            enum CodingKeys: String, CodingKey {
+                case filmId = "film_id"
+                case rating
+            }
+        }
+
+        let rows: [Row] = try await client.from("film_ratings")
+            .select("film_id, rating")
+            .in("film_id", values: unique)
+            .execute()
+            .value
+
+        var sums: [Int: (sum: Int, count: Int)] = [:]
+        for row in rows {
+            let cur = sums[row.filmId] ?? (0, 0)
+            sums[row.filmId] = (cur.sum + row.rating, cur.count + 1)
+        }
+        return sums.mapValues { pair in Double(pair.sum) / Double(pair.count) }
+    }
+
     func fetchUserFilmRating(filmId: Int) async throws -> Int? {
         struct Row: Decodable {
             let rating: Int
@@ -294,7 +324,7 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
             .select(filmSelectColumns)
             .eq("status", value: "approved")
             .in("id", values: unique)
-            .order("view_count", ascending: false)
+            .order("updated_at", ascending: false)
             .execute()
             .value
     }
