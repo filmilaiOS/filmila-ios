@@ -1,6 +1,9 @@
 import Foundation
 
 final class LiveAppContainer: AppContainer {
+    /// Set from `FilmilaApp.init` for diagnostics that need the live auth service without environment injection.
+    static weak var shared: LiveAppContainer?
+
     /// Lazily created once; `authService` and `FilmilaApp`’s `@StateObject` must use this same instance.
     lazy var sharedAuthService: AuthService = AuthService()
     var authService: AuthServiceProtocol { sharedAuthService }

@@ -6,5 +6,6 @@ enum NetworkError: Error {
     case unauthorized
     case notFound
     case serverError(String)
+    case timeout
     case unknown
 }

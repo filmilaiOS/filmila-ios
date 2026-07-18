@@ -12,6 +12,7 @@ struct FilmilaApp: App {
 
     init() {
         let container = LiveAppContainer()
+        LiveAppContainer.shared = container
         self.container = container
         _auth = StateObject(wrappedValue: container.sharedAuthService)
         _networkMonitor = StateObject(wrappedValue: container.pathMonitor)

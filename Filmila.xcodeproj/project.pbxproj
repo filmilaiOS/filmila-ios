@@ -102,6 +102,7 @@
 		D47E0B2F3108D697F046E50E /* CommunityFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC5BAC566356591841A838E /* CommunityFeedViewModel.swift */; };
 		D7DB0BEC1B6B3C572F791E34 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42DB17825B62A3D693752CF /* RegisterView.swift */; };
 		D9F692C9DED5C8994A21E42E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5655A0A00833B0909DF4D4A /* AuthService.swift */; };
+		F8B4C3D2E1A0F9E8D7C6B5A4 /* AuthTokenDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A3B2C1D0F9E8A7B6C5D4E3 /* AuthTokenDiagnostics.swift */; };
 		DAFD53C0B7AED1B114CAB878 /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21B7F6DED2F84EB849F1F37B /* AppNotification.swift */; };
 		DD7F812861E0BA0B6361D4D9 /* HeroCarouselView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DECC963D109BEBAB5F1D5B9 /* HeroCarouselView.swift */; };
 		E0F421AC631F71D88871F196 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9E594C042D2A07C749B8AE /* HomeViewModel.swift */; };
@@ -234,6 +235,7 @@
 		C3EBB5FA93D074C0EEAFA4BE /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
 		C4CFDE942CF6AF80E93A93AD /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		C5655A0A00833B0909DF4D4A /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		E7A3B2C1D0F9E8A7B6C5D4E3 /* AuthTokenDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTokenDiagnostics.swift; sourceTree = "<group>"; };
 		C8575249F7863B77CA343525 /* FilmilaColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmilaColors.swift; sourceTree = "<group>"; };
 		C8DA644DDFA2A94FAFC55E61 /* Film+PlaybackURL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Film+PlaybackURL.swift"; sourceTree = "<group>"; };
 		C942F92F727A1AD051B407EC /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
@@ -656,6 +658,7 @@
 			isa = PBXGroup;
 			children = (
 				C5655A0A00833B0909DF4D4A /* AuthService.swift */,
+				E7A3B2C1D0F9E8A7B6C5D4E3 /* AuthTokenDiagnostics.swift */,
 				9E05D3CF1F3CCA1ACA8B1F48 /* KeychainManager.swift */,
 			);
 			path = Auth;
@@ -912,6 +915,7 @@
 				DAFD53C0B7AED1B114CAB878 /* AppNotification.swift in Sources */,
 				224A0FF863585F3356BCF77C /* AuthNavigationStack.swift in Sources */,
 				D9F692C9DED5C8994A21E42E /* AuthService.swift in Sources */,
+				F8B4C3D2E1A0F9E8D7C6B5A4 /* AuthTokenDiagnostics.swift in Sources */,
 				F6D0FFF322B6903FE3B9E4DE /* AuthViewModel.swift in Sources */,
 				5013629EC17DB006FB0831D0 /* CachedAsyncImage.swift in Sources */,
 				F98C30AF96494031A4B4A17E /* CategoryPostsView.swift in Sources */,
