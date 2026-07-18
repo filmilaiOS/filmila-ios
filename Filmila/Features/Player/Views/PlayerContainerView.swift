@@ -66,13 +66,16 @@ struct PlayerContainerView: View {
             }
         }
         .task {
+            PlaybackLogger.log("PlayerContainerView.task START — launching startPlayback()", filmId: vm.filmIdForLogging)
             do {
                 try await vm.startPlayback()
+                PlaybackLogger.log("PlayerContainerView.task startPlayback succeeded", filmId: vm.filmIdForLogging)
             } catch {
-                print("[FilmilaPlayback] startPlayback failed: \(error.localizedDescription)")
+                PlaybackLogger.logError("PlayerContainerView.task startPlayback failed", error: error, filmId: vm.filmIdForLogging)
             }
         }
         .onDisappear {
+            PlaybackLogger.log("PlayerContainerView.onDisappear — cleanup()", filmId: vm.filmIdForLogging)
             vm.cleanup()
         }
     }

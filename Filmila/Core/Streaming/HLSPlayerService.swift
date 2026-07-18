@@ -34,6 +34,9 @@ final class HLSPlayerService: ObservableObject {
     private var stalledNotificationToken: NSObjectProtocol?
     private var bufferEmptyObservation: NSKeyValueObservation?
     private var bufferLikelyObservation: NSKeyValueObservation?
+    private var timeControlStatusObservation: NSKeyValueObservation?
+    private var playerRateObservation: NSKeyValueObservation?
+    private var failedToEndNotificationToken: NSObjectProtocol?
 
     private(set) var currentFilmId: Int?
     private weak var networkMonitor: (any NetworkMonitorProtocol)?
@@ -58,6 +61,10 @@ final class HLSPlayerService: ObservableObject {
     }
 
     func preparePlayback(film: Film, resumeFrom: FilmProgress?) async throws {
+        PlaybackLogger.log(
+            "preparePlayback START title=\(film.displayTitle) hlsUrl=\(film.hlsUrl ?? "nil") videoUrl=\(film.videoUrl ?? "nil") resumeSeconds=\(resumeFrom?.progressSeconds ?? 0)",
+            filmId: film.id
+        )
         cleanup()
         preparedFilm = film
         currentFilmId = film.id
@@ -67,13 +74,16 @@ final class HLSPlayerService: ObservableObject {
 
         configureAudioSession()
 
+        PlaybackLogger.log("resolvePlaybackURL START forceSignedRefresh=false", filmId: film.id)
         let url = try await resolvePlaybackURL(for: film, forceSignedRefresh: false)
-        print("[FilmilaPlayback] prepare filmId=\(film.id) urlHost=\(url.host ?? "?")")
+        PlaybackLogger.log("resolvePlaybackURL SUCCESS url=\(PlaybackLogger.redactedURL(url))", filmId: film.id)
 
         try await startPlayer(with: url, resumeFrom: resumeFrom)
+        PlaybackLogger.log("preparePlayback COMPLETE state=\(playbackState)", filmId: film.id)
     }
 
     private func startPlayer(with url: URL, resumeFrom: FilmProgress?) async throws {
+        PlaybackLogger.log("startPlayer START url=\(PlaybackLogger.redactedURL(url))", filmId: currentFilmId)
         let asset = AVURLAsset(url: url, options: [
             AVURLAssetPreferPreciseDurationAndTimingKey: false
         ])
@@ -87,25 +97,63 @@ final class HLSPlayerService: ObservableObject {
         observeStalls(for: item)
         observeBuffering(for: item)
         observeProgress(for: newPlayer)
+        observePlayerDiagnostics(for: newPlayer, item: item)
 
+        PlaybackLogger.log(
+            "waitForPlayerItemReady START initialStatus=\(PlaybackLogger.playerItemStatus(item.status)) timeout=45s",
+            filmId: currentFilmId
+        )
         try await waitForPlayerItemReady(item)
+        PlaybackLogger.log(
+            "waitForPlayerItemReady SUCCESS status=\(PlaybackLogger.playerItemStatus(item.status)) duration=\(CMTimeGetSeconds(item.duration))",
+            filmId: currentFilmId
+        )
 
         if let resumeFrom, resumeFrom.progressSeconds > 10 {
+            PlaybackLogger.log("seeking to resume position \(resumeFrom.progressSeconds)s", filmId: currentFilmId)
             let seekTime = CMTime(seconds: Double(resumeFrom.progressSeconds), preferredTimescale: 600)
             await newPlayer.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
         }
 
+        PlaybackLogger.log(
+            "calling play() rate=\(newPlayer.rate) timeControlStatus=\(PlaybackLogger.timeControlStatus(newPlayer.timeControlStatus))",
+            filmId: currentFilmId
+        )
         newPlayer.play()
         playbackState = .playing
         isBuffering = false
+        PlaybackLogger.log(
+            "startPlayer COMPLETE rate=\(newPlayer.rate) timeControlStatus=\(PlaybackLogger.timeControlStatus(newPlayer.timeControlStatus))",
+            filmId: currentFilmId
+        )
     }
 
     private func observeStalls(for item: AVPlayerItem) {
-        stallStatusObservation = item.observe(\.status, options: [.new]) { [weak self] observed, _ in
+        PlaybackLogger.log(
+            "observeStalls attached initialStatus=\(PlaybackLogger.playerItemStatus(item.status))",
+            filmId: currentFilmId
+        )
+        stallStatusObservation = item.observe(\.status, options: [.new, .initial]) { [weak self] observed, change in
             Task { @MainActor in
                 guard let self else { return }
                 guard observed === self.observedItem else { return }
-                if observed.status == .failed {
+                let status = observed.status
+                PlaybackLogger.log(
+                    "AVPlayerItem.status KVO → \(PlaybackLogger.playerItemStatus(status)) (was=\(change.oldValue.map { PlaybackLogger.playerItemStatus($0) } ?? "nil"))",
+                    filmId: self.currentFilmId
+                )
+                if status == .failed {
+                    PlaybackLogger.logError(
+                        "AVPlayerItem.status failed item.error",
+                        error: observed.error,
+                        filmId: self.currentFilmId
+                    )
+                    if let itemError = observed.errorLog()?.events.last {
+                        PlaybackLogger.log(
+                            "AVPlayerItem errorLog last event: \(itemError.errorComment ?? "no comment") status=\(itemError.errorStatusCode)",
+                            filmId: self.currentFilmId
+                        )
+                    }
                     await self.handlePlaybackFailure(item: observed)
                 }
             }
@@ -117,7 +165,45 @@ final class HLSPlayerService: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
+                PlaybackLogger.log("notification AVPlayerItemPlaybackStalled", filmId: self?.currentFilmId)
                 await self?.handleStall()
+            }
+        }
+    }
+
+    private func observePlayerDiagnostics(for player: AVPlayer, item: AVPlayerItem) {
+        timeControlStatusObservation = player.observe(\.timeControlStatus, options: [.new, .initial]) { [weak self] observed, change in
+            Task { @MainActor in
+                guard let self else { return }
+                let status = observed.timeControlStatus
+                PlaybackLogger.log(
+                    "AVPlayer.timeControlStatus KVO → \(PlaybackLogger.timeControlStatus(status)) reason=\(PlaybackLogger.waitingReason(observed.reasonForWaitingToPlay)) (was=\(change.oldValue.map { PlaybackLogger.timeControlStatus($0) } ?? "nil"))",
+                    filmId: self.currentFilmId
+                )
+            }
+        }
+
+        playerRateObservation = player.observe(\.rate, options: [.new, .initial]) { [weak self] observed, change in
+            Task { @MainActor in
+                PlaybackLogger.log(
+                    "AVPlayer.rate KVO → \(observed.rate) (was=\(change.oldValue ?? -1))",
+                    filmId: self?.currentFilmId
+                )
+            }
+        }
+
+        failedToEndNotificationToken = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] notification in
+            Task { @MainActor in
+                let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error
+                PlaybackLogger.logError(
+                    "notification AVPlayerItemFailedToPlayToEndTime",
+                    error: error,
+                    filmId: self?.currentFilmId
+                )
             }
         }
     }
@@ -128,6 +214,7 @@ final class HLSPlayerService: ObservableObject {
                 guard let self else { return }
                 guard observed === self.observedItem else { return }
                 if change.newValue == true {
+                    PlaybackLogger.log("AVPlayerItem.isPlaybackBufferEmpty → true", filmId: self.currentFilmId)
                     self.isBuffering = true
                 }
             }
@@ -137,6 +224,7 @@ final class HLSPlayerService: ObservableObject {
                 guard let self else { return }
                 guard observed === self.observedItem else { return }
                 if change.newValue == true {
+                    PlaybackLogger.log("AVPlayerItem.isPlaybackLikelyToKeepUp → true", filmId: self.currentFilmId)
                     self.isBuffering = false
                 }
             }
@@ -173,16 +261,28 @@ final class HLSPlayerService: ObservableObject {
     }
 
     private func handlePlaybackFailure(item: AVPlayerItem) async {
-        guard !isRecoveringFromStall else { return }
-        let ns = item.error as NSError?
-        print("[FilmilaPlayback] item failed filmId=\(currentFilmId ?? -1) error=\(ns?.localizedDescription ?? "unknown") code=\(ns?.code ?? 0)")
+        guard !isRecoveringFromStall else {
+            PlaybackLogger.log("handlePlaybackFailure skipped — already recovering from stall", filmId: currentFilmId)
+            return
+        }
+        PlaybackLogger.logError("handlePlaybackFailure", error: item.error, filmId: currentFilmId)
         await handleStall()
     }
 
     func handleStall() async {
-        guard let film = preparedFilm else { return }
-        guard !isRecoveringFromStall else { return }
+        guard let film = preparedFilm else {
+            PlaybackLogger.log("handleStall aborted — no preparedFilm")
+            return
+        }
+        guard !isRecoveringFromStall else {
+            PlaybackLogger.log("handleStall skipped — already recovering", filmId: film.id)
+            return
+        }
         guard stallRecoveryCount < maxStallRecoveries else {
+            PlaybackLogger.log(
+                "handleStall exhausted retries (\(maxStallRecoveries)) — setting failed state",
+                filmId: film.id
+            )
             playbackState = .failed(String(localized: "player_error_unavailable"))
             isBuffering = false
             return
@@ -192,13 +292,16 @@ final class HLSPlayerService: ObservableObject {
         defer { isRecoveringFromStall = false }
 
         stallRecoveryCount += 1
+        PlaybackLogger.log("handleStall attempt \(stallRecoveryCount)/\(maxStallRecoveries)", filmId: film.id)
         playbackState = .stalled
         isBuffering = true
 
         let resumeSeconds = CMTimeGetSeconds(player?.currentTime() ?? .zero)
 
         do {
+            PlaybackLogger.log("handleStall resolvePlaybackURL forceSignedRefresh=true", filmId: film.id)
             let url = try await resolvePlaybackURL(for: film, forceSignedRefresh: true)
+            PlaybackLogger.log("handleStall got URL=\(PlaybackLogger.redactedURL(url))", filmId: film.id)
             let asset = AVURLAsset(url: url)
             let item = AVPlayerItem(asset: asset)
             item.preferredForwardBufferDuration = 30
@@ -219,13 +322,19 @@ final class HLSPlayerService: ObservableObject {
             player?.play()
             playbackState = .playing
             isBuffering = false
+            PlaybackLogger.log("handleStall recovery SUCCESS", filmId: film.id)
         } catch {
+            PlaybackLogger.logError("handleStall recovery FAILED", error: error, filmId: film.id)
             playbackState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             isBuffering = false
         }
     }
 
     func handleNetworkChange(isConnected: Bool) {
+        PlaybackLogger.log(
+            "handleNetworkChange isConnected=\(isConnected) playbackState=\(playbackState)",
+            filmId: currentFilmId
+        )
         if isConnected {
             switch playbackState {
             case .stalled:
@@ -245,6 +354,7 @@ final class HLSPlayerService: ObservableObject {
     }
 
     func cleanup() {
+        PlaybackLogger.log("cleanup START", filmId: currentFilmId)
         removeItemObservers()
 
         if let obs = timeObserver, let player {
@@ -264,36 +374,73 @@ final class HLSPlayerService: ObservableObject {
         currentTime = 0
         duration = 0
         isBuffering = false
+        PlaybackLogger.log("cleanup COMPLETE")
     }
 
     private func resolvePlaybackURL(for film: Film, forceSignedRefresh: Bool) async throws -> URL {
+        PlaybackLogger.log(
+            "resolvePlaybackURL catalog hlsUrl=\(film.hlsUrl ?? "nil") videoUrl=\(film.videoUrl ?? "nil") directPlaybackURL=\(film.directPlaybackURL.map { PlaybackLogger.redactedURL($0) } ?? "nil") forceSignedRefresh=\(forceSignedRefresh)",
+            filmId: film.id
+        )
         if !forceSignedRefresh, let direct = film.directPlaybackURL {
+            PlaybackLogger.log("resolvePlaybackURL using direct catalog URL (no signing)", filmId: film.id)
             return direct
         }
         if forceSignedRefresh {
+            PlaybackLogger.log("resolvePlaybackURL invalidating signed URL cache", filmId: film.id)
             s3Service.invalidateCache(filmId: film.id)
         }
+        PlaybackLogger.log("resolvePlaybackURL fetching signed URL via S3SignedURLService", filmId: film.id)
         return try await s3Service.fetchPlaybackURL(filmId: film.id)
     }
 
     private func configureAudioSession() {
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .moviePlayback)
-        try? session.setActive(true)
+        do {
+            try session.setCategory(.playback, mode: .moviePlayback)
+            try session.setActive(true)
+            PlaybackLogger.log("AVAudioSession configured category=playback mode=moviePlayback", filmId: currentFilmId)
+        } catch {
+            PlaybackLogger.logError("AVAudioSession configuration FAILED", error: error, filmId: currentFilmId)
+        }
     }
 
     private func waitForPlayerItemReady(_ item: AVPlayerItem, timeout: TimeInterval = 45) async throws {
         let deadline = Date().addingTimeInterval(timeout)
+        var lastLoggedStatus: AVPlayerItem.Status?
+        var waitStarted = Date()
+        var lastProgressLog = waitStarted
         while Date() < deadline {
-            switch item.status {
+            let status = item.status
+            if status != lastLoggedStatus {
+                PlaybackLogger.log(
+                    "waitForPlayerItemReady status=\(PlaybackLogger.playerItemStatus(status)) elapsed=\(String(format: "%.1f", Date().timeIntervalSince(waitStarted)))s",
+                    filmId: currentFilmId
+                )
+                lastLoggedStatus = status
+            }
+            switch status {
             case .readyToPlay:
                 return
             case .failed:
+                PlaybackLogger.logError("waitForPlayerItemReady item failed", error: item.error, filmId: currentFilmId)
                 throw item.error ?? PlaybackError.streamUnavailable
             default:
+                let now = Date()
+                if now.timeIntervalSince(lastProgressLog) >= 5 {
+                    lastProgressLog = now
+                    PlaybackLogger.log(
+                        "waitForPlayerItemReady still waiting status=\(PlaybackLogger.playerItemStatus(status)) isPlaybackLikelyToKeepUp=\(item.isPlaybackLikelyToKeepUp) isPlaybackBufferEmpty=\(item.isPlaybackBufferEmpty)",
+                        filmId: currentFilmId
+                    )
+                }
                 try await Task.sleep(nanoseconds: 100_000_000)
             }
         }
+        PlaybackLogger.log(
+            "waitForPlayerItemReady TIMEOUT after \(timeout)s lastStatus=\(PlaybackLogger.playerItemStatus(item.status)) item.error=\(item.error?.localizedDescription ?? "nil")",
+            filmId: currentFilmId
+        )
         throw PlaybackError.loadTimeout
     }
 
@@ -308,5 +455,13 @@ final class HLSPlayerService: ObservableObject {
         bufferEmptyObservation = nil
         bufferLikelyObservation?.invalidate()
         bufferLikelyObservation = nil
+        timeControlStatusObservation?.invalidate()
+        timeControlStatusObservation = nil
+        playerRateObservation?.invalidate()
+        playerRateObservation = nil
+        if let failedToEndNotificationToken {
+            NotificationCenter.default.removeObserver(failedToEndNotificationToken)
+        }
+        failedToEndNotificationToken = nil
     }
 }

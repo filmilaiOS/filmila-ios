@@ -10,6 +10,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
     }
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
+        PlaybackLogger.log("VideoPlayerView.makeUIViewController player=\(service.player == nil ? "nil" : "set")")
         let controller = AVPlayerViewController()
         controller.allowsPictureInPicturePlayback = true
         controller.canStartPictureInPictureAutomaticallyFromInline = true
@@ -21,6 +22,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {
         if uiViewController.player !== service.player {
+            PlaybackLogger.log("VideoPlayerView.updateUIViewController attaching new AVPlayer instance")
             uiViewController.player = service.player
         }
     }
