@@ -12,7 +12,7 @@ final class DeepLinkHandler: DeepLinkHandlerProtocol, ObservableObject {
 
     func handle(_ url: URL) {
         Task {
-            try? await SupabaseManager.shared.client.auth.session(from: url)
+            _ = try? await SupabaseManager.shared.client.auth.session(from: url)
             let route = Self.parseRoute(from: url)
             await MainActor.run {
                 self.pendingRoute = route
@@ -40,6 +40,20 @@ final class DeepLinkHandler: DeepLinkHandlerProtocol, ObservableObject {
         }
 
         if isFilmilaScheme {
+            if host == "payment-complete" {
+                let filmId = components.queryItems?
+                    .first(where: { $0.name == "filmId" })?
+                    .value
+                    .flatMap(Int.init)
+                return .paymentComplete(filmId: filmId)
+            }
+            if host == "payment-cancelled" {
+                let filmId = components.queryItems?
+                    .first(where: { $0.name == "filmId" })?
+                    .value
+                    .flatMap(Int.init)
+                return .paymentCancelled(filmId: filmId)
+            }
             if host == "films", let id = segments.first.flatMap(Int.init) {
                 return .filmDetail(filmId: id)
             }

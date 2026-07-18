@@ -20,6 +20,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
     let genre: String?
     let duration: Int?
     let viewCount: Int
+    let averageRating: Double?
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -36,6 +37,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         case genre
         case duration
         case viewCount = "view_count"
+        case averageRating = "average_rating"
         case createdAt = "updated_at"
     }
 
@@ -53,6 +55,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         genre: String? = nil,
         duration: Int? = nil,
         viewCount: Int = 0,
+        averageRating: Double? = nil,
         createdAt: Date
     ) {
         self.id = id
@@ -68,6 +71,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         self.genre = genre
         self.duration = duration
         self.viewCount = viewCount
+        self.averageRating = averageRating
         self.createdAt = createdAt
     }
 
@@ -86,6 +90,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         genre = try container.decodeIfPresent(String.self, forKey: .genre)
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         viewCount = try container.decodeIfPresent(Int.self, forKey: .viewCount) ?? 0
+        averageRating = try container.decodeIfPresent(Double.self, forKey: .averageRating)
         createdAt = try container.decodeFilmilaTimestamp(forKey: .createdAt)
     }
 
@@ -94,18 +99,14 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
     }
 
     var displayTitle: String {
-        let prefersArabic = Locale.current.language.languageCode?.identifier == "ar"
-            || Locale.preferredLanguages.first?.hasPrefix("ar") == true
-        if prefersArabic, let ar = titleAr, !ar.isEmpty {
+        if AppLanguage.prefersArabic, let ar = titleAr, !ar.isEmpty {
             return ar
         }
         return title
     }
 
     var displayDescription: String? {
-        let prefersArabic = Locale.current.language.languageCode?.identifier == "ar"
-            || Locale.preferredLanguages.first?.hasPrefix("ar") == true
-        if prefersArabic, let ar = descriptionAr, !ar.isEmpty {
+        if AppLanguage.prefersArabic, let ar = descriptionAr, !ar.isEmpty {
             return ar
         }
         if let description, !description.isEmpty {

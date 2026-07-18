@@ -5,7 +5,7 @@ enum Env {
     private static let bundledDefaultSupabaseURL = URL(string: "https://xvixqivyecroogmhktdr.supabase.co")!
     private static let bundledDefaultSupabaseAnonKey =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXhxaXZ5ZWNyb29nbWhrdGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MDAxNjksImV4cCI6MjA2MDk3NjE2OX0.H9lB71-5ntdsIw-vXKd1v_w8QL30vYDT4r7IIsd6aaI"
-    private static let bundledDefaultAPIBaseURL = URL(string: "https://api.filmila.app")!
+    private static let bundledDefaultAPIBaseURL = URL(string: "https://www.filmila.com")!
 
     private static func plistString(_ key: String) -> String {
         let raw = (Bundle.main.object(forInfoDictionaryKey: key) as? String)?

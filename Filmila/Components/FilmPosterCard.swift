@@ -39,7 +39,7 @@ struct FilmPosterCard: View {
                 }
             }
             .frame(width: width, height: posterHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(film.displayTitle)

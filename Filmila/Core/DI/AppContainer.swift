@@ -16,4 +16,5 @@ protocol AppContainer: AnyObject {
     var networkMonitor: any NetworkMonitorProtocol { get }
     var deepLinkHandler: DeepLinkHandler { get }
     var notificationsRepo: NotificationsRepositoryProtocol { get }
+    var forumRepo: ForumRepositoryProtocol { get }
 }

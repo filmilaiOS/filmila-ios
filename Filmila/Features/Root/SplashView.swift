@@ -1,15 +1,23 @@
 import SwiftUI
 
 struct SplashView: View {
+    @State private var logoOpacity = 0.0
+
+    private let logoWidth: CGFloat = 140
+
     var body: some View {
         ZStack {
-            FilmilaColors.background.ignoresSafeArea()
-            VStack(spacing: Spacing.lg) {
-                Text(String(localized: "app_name"))
-                    .font(.filmilaDisplay)
-                    .foregroundStyle(FilmilaColors.accent)
-                ProgressView()
-                    .tint(FilmilaColors.accent)
+            FilmilaColors.splashBackground.ignoresSafeArea()
+
+            Image("FilmilaLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: logoWidth)
+                .opacity(logoOpacity)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.55)) {
+                logoOpacity = 1
             }
         }
     }
@@ -18,7 +26,6 @@ struct SplashView: View {
 #if DEBUG
 #Preview {
     SplashView()
-        .environment(\.container, PreviewContainer())
         .preferredColorScheme(.dark)
 }
 #endif

@@ -10,7 +10,7 @@ struct FilmProgress: Identifiable, Codable, Equatable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case userId = "user_id"
+        case userId = "viewer_id"
         case filmId = "film_id"
         case progressSeconds = "progress_seconds"
         case completedAt = "completed_at"

@@ -1,4 +1,4 @@
-// Set production Supabase values in Xcode build settings or override this file.
-FILMILA_SUPABASE_URL = https://xvixqivyecroogmhktdr.supabase.co
+// Production build settings — override with your release Supabase/API values before shipping.
+FILMILA_SUPABASE_URL = https:/$()/xvixqivyecroogmhktdr.supabase.co
 FILMILA_SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2aXhxaXZ5ZWNyb29nbWhrdGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU0MDAxNjksImV4cCI6MjA2MDk3NjE2OX0.H9lB71-5ntdsIw-vXKd1v_w8QL30vYDT4r7IIsd6aaI
-FILMILA_API_BASE_URL = https://api.filmila.app
+FILMILA_API_BASE_URL = https:/$()/www.filmila.com

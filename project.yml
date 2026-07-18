@@ -37,7 +37,7 @@ targets:
       base:
         INFOPLIST_KEY_CFBundleDisplayName: Filmila
         PRODUCT_BUNDLE_IDENTIFIER: com.filmila.app
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIRequiresFullScreen: YES
         ENABLE_TESTABILITY: YES
@@ -51,16 +51,18 @@ targets:
         SUPABASE_URL: $(FILMILA_SUPABASE_URL)
         SUPABASE_ANON_KEY: $(FILMILA_SUPABASE_ANON_KEY)
         API_BASE_URL: $(FILMILA_API_BASE_URL)
-        UILaunchScreen:
-          UILaunchScreen_Generation: YES
+        UILaunchStoryboardName: LaunchScreen
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        CFBundleURLTypes:
+          - CFBundleURLName: com.filmila.app.deeplink
+            CFBundleURLSchemes:
+              - filmila
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations:
             UIWindowSceneSessionRoleApplication:
               - UISceneConfigurationName: Default Configuration
-                UISceneDelegateClassName: ""
     scheme:
       testTargets:
         - FilmilaTests

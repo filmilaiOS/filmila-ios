@@ -30,12 +30,12 @@ protocol FilmsRepositoryProtocol: AnyObject {
     func isFilmInFavorites(filmId: Int) async throws -> Bool
 }
 
-/// Supabase tables assumed: `films`, `film_watchlist` (`user_id`, `film_id`), `film_favorites` (`user_id`, `film_id`),
+/// Supabase tables assumed: `films`, `watchlist` (`viewer_id`, `film_id`), `favorite_films` (`viewer_id`, `film_id`),
 /// `comments`, `film_ratings`, `profiles`.
 final class LiveFilmsRepository: FilmsRepositoryProtocol {
     /// Columns confirmed on the `films` table (avoid selecting or ordering by missing columns).
     private let filmSelectColumns =
-        "id,title,description,thumbnail_url,video_url,price,status,genre,duration,updated_at"
+        "id,title,description,thumbnail_url,video_url,price,status,genre,duration,view_count,average_rating,updated_at"
 
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
@@ -104,11 +104,11 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         let userId = try await currentUserId()
         if add {
             let row = UserFilmRow(userId: userId, filmId: filmId)
-            try await client.from("film_watchlist").insert(row).execute()
+            try await client.from("watchlist").insert(row).execute()
         } else {
-            try await client.from("film_watchlist")
+            try await client.from("watchlist")
                 .delete()
-                .eq("user_id", value: userId.uuidString)
+                .eq("viewer_id", value: userId.uuidString)
                 .eq("film_id", value: filmId)
                 .execute()
         }
@@ -118,11 +118,11 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         let userId = try await currentUserId()
         if add {
             let row = UserFilmRow(userId: userId, filmId: filmId)
-            try await client.from("film_favorites").insert(row).execute()
+            try await client.from("favorite_films").insert(row).execute()
         } else {
-            try await client.from("film_favorites")
+            try await client.from("favorite_films")
                 .delete()
-                .eq("user_id", value: userId.uuidString)
+                .eq("viewer_id", value: userId.uuidString)
                 .eq("film_id", value: filmId)
                 .execute()
         }
@@ -131,9 +131,9 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
     func fetchWatchlist() async throws -> [Film] {
         let userId = try await currentUserId()
         let rows: [FilmIdOnlyRow] = try await client
-            .from("film_watchlist")
+            .from("watchlist")
             .select("film_id")
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .execute()
             .value
         return try await fetchFilmsByIds(rows.map(\.filmId))
@@ -142,9 +142,9 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
     func fetchFavorites() async throws -> [Film] {
         let userId = try await currentUserId()
         let rows: [FilmIdOnlyRow] = try await client
-            .from("film_favorites")
+            .from("favorite_films")
             .select("film_id")
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .execute()
             .value
         return try await fetchFilmsByIds(rows.map(\.filmId))
@@ -171,35 +171,30 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
     }()
 
     func fetchCommentsWithAuthors(filmId: Int) async throws -> [CommentDisplay] {
-        do {
-            let rows: [CommentWithProfileRow] = try await client.from("comments")
-                .select("id,film_id,user_id,content,created_at,profiles(full_name)")
-                .eq("film_id", value: filmId)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            return rows.map { $0.display }
-        } catch {
-            let rows: [Comment] = try await client.from("comments")
-                .select()
-                .eq("film_id", value: filmId)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            return rows.map {
-                CommentDisplay(
-                    id: $0.id,
-                    filmId: $0.filmId,
-                    userId: $0.userId,
-                    content: $0.content,
-                    createdAt: $0.createdAt,
-                    authorDisplayName: nil
-                )
-            }
+        let rows: [Comment] = try await client.from("comments")
+            .select("id,film_id,viewer_id,comment,created_at")
+            .eq("film_id", value: filmId)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        return rows.map {
+            CommentDisplay(
+                id: $0.id,
+                filmId: $0.filmId,
+                userId: $0.userId,
+                content: $0.content,
+                createdAt: $0.createdAt,
+                authorDisplayName: nil
+            )
         }
     }
 
     func fetchFilmRatingsAggregate(filmId: Int) async throws -> (average: Double, count: Int) {
+        let film = try await fetchFilm(id: filmId)
+        if let average = film.averageRating, average > 0 {
+            return (average, 0)
+        }
+
         struct Row: Decodable {
             let rating: Int
         }
@@ -214,8 +209,16 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
     }
 
     func fetchAverageRatings(forFilmIds ids: [Int]) async throws -> [Int: Double] {
-        let unique = Array(Set(ids))
-        guard !unique.isEmpty else { return [:] }
+        let films = try await fetchFilms(byIds: ids)
+        var result: [Int: Double] = [:]
+        for film in films {
+            if let average = film.averageRating, average > 0 {
+                result[film.id] = average
+            }
+        }
+
+        let missing = ids.filter { result[$0] == nil }
+        guard !missing.isEmpty else { return result }
 
         struct Row: Decodable {
             let filmId: Int
@@ -228,7 +231,7 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
 
         let rows: [Row] = try await client.from("film_ratings")
             .select("film_id, rating")
-            .in("film_id", values: unique)
+            .in("film_id", values: missing)
             .execute()
             .value
 
@@ -237,7 +240,10 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
             let cur = sums[row.filmId] ?? (0, 0)
             sums[row.filmId] = (cur.sum + row.rating, cur.count + 1)
         }
-        return sums.mapValues { pair in Double(pair.sum) / Double(pair.count) }
+        for (filmId, pair) in sums where pair.count > 0 {
+            result[filmId] = Double(pair.sum) / Double(pair.count)
+        }
+        return result
     }
 
     func fetchUserFilmRating(filmId: Int) async throws -> Int? {
@@ -287,17 +293,17 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         let row = CommentInsert(
             id: UUID().uuidString,
             filmId: filmId,
-            userId: userId.uuidString,
-            content: text
+            viewerId: userId.uuidString,
+            comment: text
         )
         try await client.from("comments").insert(row).execute()
     }
 
     func isFilmInWatchlist(filmId: Int) async throws -> Bool {
         let userId = try await currentUserId()
-        let rows: [FilmIdOnlyRow] = try await client.from("film_watchlist")
+        let rows: [FilmIdOnlyRow] = try await client.from("watchlist")
             .select("film_id")
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .eq("film_id", value: filmId)
             .limit(1)
             .execute()
@@ -307,9 +313,9 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
 
     func isFilmInFavorites(filmId: Int) async throws -> Bool {
         let userId = try await currentUserId()
-        let rows: [FilmIdOnlyRow] = try await client.from("film_favorites")
+        let rows: [FilmIdOnlyRow] = try await client.from("favorite_films")
             .select("film_id")
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .eq("film_id", value: filmId)
             .limit(1)
             .execute()
@@ -341,7 +347,7 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         let userId: UUID
         let filmId: Int
         enum CodingKeys: String, CodingKey {
-            case userId = "user_id"
+            case userId = "viewer_id"
             case filmId = "film_id"
         }
     }
@@ -350,52 +356,6 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
         let filmId: Int
         enum CodingKeys: String, CodingKey {
             case filmId = "film_id"
-        }
-    }
-
-    private struct CommentWithProfileRow: Decodable {
-        let id: UUID
-        let filmId: Int
-        let userId: UUID
-        let content: String
-        let createdAt: Date
-        let profiles: ProfileSnippet?
-
-        enum CodingKeys: String, CodingKey {
-            case id
-            case filmId = "film_id"
-            case userId = "user_id"
-            case content
-            case createdAt = "created_at"
-            case profiles
-        }
-
-        struct ProfileSnippet: Decodable {
-            let fullName: String?
-            enum CodingKeys: String, CodingKey {
-                case fullName = "full_name"
-            }
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            id = try container.decode(UUID.self, forKey: .id)
-            filmId = try container.decode(Int.self, forKey: .filmId)
-            userId = try container.decode(UUID.self, forKey: .userId)
-            content = try container.decode(String.self, forKey: .content)
-            createdAt = try container.decodeFilmilaTimestamp(forKey: .createdAt)
-            profiles = try container.decodeIfPresent(ProfileSnippet.self, forKey: .profiles)
-        }
-
-        var display: CommentDisplay {
-            CommentDisplay(
-                id: id,
-                filmId: filmId,
-                userId: userId,
-                content: content,
-                createdAt: createdAt,
-                authorDisplayName: profiles?.fullName
-            )
         }
     }
 
@@ -418,14 +378,14 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
     private struct CommentInsert: Encodable {
         let id: String
         let filmId: Int
-        let userId: String
-        let content: String
+        let viewerId: String
+        let comment: String
 
         enum CodingKeys: String, CodingKey {
             case id
             case filmId = "film_id"
-            case userId = "user_id"
-            case content
+            case viewerId = "viewer_id"
+            case comment
         }
     }
 }

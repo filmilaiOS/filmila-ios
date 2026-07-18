@@ -66,7 +66,11 @@ struct PlayerContainerView: View {
             }
         }
         .task {
-            try? await vm.startPlayback()
+            do {
+                try await vm.startPlayback()
+            } catch {
+                print("[FilmilaPlayback] startPlayback failed: \(error.localizedDescription)")
+            }
         }
         .onDisappear {
             vm.cleanup()

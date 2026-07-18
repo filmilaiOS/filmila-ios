@@ -69,28 +69,45 @@ struct MainTabView: View {
                 Label(String(localized: "tab_profile"), systemImage: "person.fill")
             }
             .tag(3)
+
+            NavigationStack {
+                CommunityFeedView(container: container)
+            }
+            .tabItem {
+                Label(String(localized: "tab_community"), systemImage: "person.2.fill")
+            }
+            .tag(4)
         }
         .tint(FilmilaColors.accent)
+        .environment(\.mainTabSelection, $selectedTab)
         .onChange(of: deepLinkHandler.pendingRoute) { route in
             guard let route else { return }
             switch route {
             case let .filmDetail(filmId):
                 selectedTab = 0
                 presentedFilm = PresentedFilm(id: filmId)
+                deepLinkHandler.pendingRoute = nil
+            case .paymentComplete:
+                break
+            case .paymentCancelled:
+                break
             case let .paymentCallback(orderId):
                 paymentOrder = PresentedOrder(orderId: orderId)
+                deepLinkHandler.pendingRoute = nil
             case .profile:
                 selectedTab = 3
+                deepLinkHandler.pendingRoute = nil
             case let .search(query):
                 selectedTab = 1
                 externalSearchQuery = query ?? ""
+                deepLinkHandler.pendingRoute = nil
             }
-            deepLinkHandler.pendingRoute = nil
         }
         .fullScreenCover(item: $presentedFilm) { film in
             NavigationStack {
                 FilmDetailView(filmId: film.id, container: container)
                     .environmentObject(networkMonitor)
+                    .environmentObject(deepLinkHandler)
             }
         }
         .sheet(item: $paymentOrder) { order in

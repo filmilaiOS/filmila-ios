@@ -33,7 +33,7 @@ final class LiveProgressRepository: ProgressRepositoryProtocol {
             updatedAt: Self.iso8601.string(from: Date())
         )
         try await client.from("film_progress")
-            .upsert(row, onConflict: "user_id,film_id")
+            .upsert(row, onConflict: "viewer_id,film_id")
             .execute()
     }
 
@@ -41,7 +41,7 @@ final class LiveProgressRepository: ProgressRepositoryProtocol {
         let userId = try await currentUserId()
         let rows: [FilmProgress] = try await client.from("film_progress")
             .select()
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .eq("film_id", value: filmId)
             .limit(1)
             .execute()
@@ -53,7 +53,7 @@ final class LiveProgressRepository: ProgressRepositoryProtocol {
         let userId = try await currentUserId()
         return try await client.from("film_progress")
             .select()
-            .eq("user_id", value: userId.uuidString)
+            .eq("viewer_id", value: userId.uuidString)
             .order("updated_at", ascending: false)
             .limit(10)
             .execute()
@@ -70,7 +70,7 @@ final class LiveProgressRepository: ProgressRepositoryProtocol {
 
         enum CodingKeys: String, CodingKey {
             case id
-            case userId = "user_id"
+            case userId = "viewer_id"
             case filmId = "film_id"
             case progressSeconds = "progress_seconds"
             case completedAt = "completed_at"

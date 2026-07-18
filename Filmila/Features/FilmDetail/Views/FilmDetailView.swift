@@ -1,14 +1,14 @@
-import Combine
 import SwiftUI
 
 struct FilmDetailView: View {
     private let container: AppContainer
 
+    @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var deepLinkHandler: DeepLinkHandler
     @EnvironmentObject private var networkMonitor: NetworkMonitor
     @StateObject private var vm: FilmDetailViewModel
     @State private var commentDraft = ""
     @State private var playbackFilm: Film?
-    @State private var showIAPSheet = false
     @State private var userStarBinding: Int = 0
 
     init(filmId: Int, container: AppContainer) {
@@ -29,8 +29,10 @@ struct FilmDetailView: View {
                                 .foregroundStyle(FilmilaColors.destructive)
                                 .padding(.horizontal, Spacing.lg)
                         }
-                        if case .redirectToWeb = vm.accessState {
-                            WebPurchasePrompt()
+                        if let notice = vm.purchaseNotice {
+                            Text(notice)
+                                .font(.filmilaCaption)
+                                .foregroundStyle(FilmilaColors.textSecondary)
                                 .padding(.horizontal, Spacing.lg)
                         }
                         descriptionSection(film: film)
@@ -43,14 +45,28 @@ struct FilmDetailView: View {
                 .fullScreenCover(item: $playbackFilm) { film in
                     PlayerContainerView(film: film, container: container, networkMonitor: networkMonitor)
                 }
-                .sheet(isPresented: $showIAPSheet) {
-                    IAPPurchaseSheet(
-                        film: film,
-                        product: iapProduct,
-                        iapService: container.iapService
-                    ) {
-                        await vm.checkAccess()
+                .fullScreenCover(item: $vm.webCheckout) { checkout in
+                    SafariCheckoutView(url: checkout.url) {
+                        Task { await vm.completeWebCheckoutFlow() }
                     }
+                    .ignoresSafeArea()
+                }
+                .onChange(of: deepLinkHandler.pendingRoute) { route in
+                    guard let route else { return }
+                    switch route {
+                    case let .paymentComplete(filmId):
+                        deepLinkHandler.pendingRoute = nil
+                        Task { await vm.handlePaymentCompleteDeepLink(filmId: filmId) }
+                    case let .paymentCancelled(filmId):
+                        deepLinkHandler.pendingRoute = nil
+                        Task { await vm.handlePaymentCancelledDeepLink(filmId: filmId) }
+                    default:
+                        break
+                    }
+                }
+                .onChange(of: scenePhase) { newPhase in
+                    guard newPhase == .active else { return }
+                    Task { await vm.recheckAccessAfterWebPurchase() }
                 }
                 .onReceive(vm.$userRating) { value in
                     userStarBinding = value ?? 0
@@ -87,20 +103,30 @@ struct FilmDetailView: View {
         }
     }
 
-    private var iapProduct: Any? {
-        if case let .requiresPurchase(product) = vm.accessState {
-            return product
-        }
-        return nil
-    }
-
     @ViewBuilder
     private func actionButtons(film: Film) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(spacing: Spacing.sm) {
-                watchButton(film: film)
-                purchaseButton(film: film)
+            let canWatch = vm.accessState == .free || vm.accessState == .purchased
+            if canWatch {
+                Button {
+                    playbackFilm = film
+                } label: {
+                    Text(String(localized: "detail_watch"))
+                        .font(.filmilaBodyMedium)
+                }
+                .buttonStyle(FilmilaPrimaryButtonStyle())
+                .disabled(vm.accessState == .checking)
+            } else if !film.isFree {
+                Button {
+                    vm.startWebPurchase()
+                } label: {
+                    Text(purchaseButtonTitle(for: film))
+                        .font(.filmilaBodyMedium)
+                }
+                .buttonStyle(FilmilaPrimaryButtonStyle())
+                .disabled(vm.accessState == .checking)
             }
+
             HStack(spacing: Spacing.sm) {
                 Button {
                     Task { await vm.toggleWatchlist() }
@@ -130,40 +156,9 @@ struct FilmDetailView: View {
         .padding(.horizontal, Spacing.lg)
     }
 
-    @ViewBuilder
-    private func watchButton(film: Film) -> some View {
-        let canWatch = vm.accessState == .free || vm.accessState == .purchased
-        Button {
-            playbackFilm = film
-        } label: {
-            Text(String(localized: "detail_watch"))
-                .font(.filmilaBodyMedium)
-        }
-        .buttonStyle(FilmilaPrimaryButtonStyle())
-        .disabled(!canWatch || vm.accessState == .checking)
-        .opacity(canWatch ? 1 : 0.45)
-    }
-
-    @ViewBuilder
-    private func purchaseButton(film: Film) -> some View {
-        if film.isFree {
-            EmptyView()
-        } else {
-            switch vm.accessState {
-            case .requiresPurchase:
-                Button {
-                    showIAPSheet = true
-                } label: {
-                    Text(String(localized: "detail_purchase"))
-                        .font(.filmilaBodyMedium)
-                }
-                .buttonStyle(FilmilaSecondaryButtonStyle())
-            case .redirectToWeb:
-                EmptyView()
-            default:
-                EmptyView()
-            }
-        }
+    private func purchaseButtonTitle(for film: Film) -> String {
+        let price = String(format: String(localized: "price_sar_format"), film.price)
+        return "\(String(localized: "detail_purchase")) · \(price)"
     }
 
     private func descriptionSection(film: Film) -> some View {
@@ -185,11 +180,17 @@ struct FilmDetailView: View {
                 .padding(.horizontal, Spacing.lg)
 
             HStack(alignment: .center, spacing: Spacing.md) {
-                let avgStars = min(5, max(0, Int((vm.averageRating).rounded())))
+                let avgStars = min(5, max(0, Int(vm.averageRating.rounded())))
                 StarRatingView(rating: .constant(avgStars), isInteractive: false)
-                Text(String(format: String(localized: "detail_rating_average_format"), vm.averageRating, vm.ratingCount))
-                    .font(.filmilaCaption)
-                    .foregroundStyle(FilmilaColors.textSecondary)
+                if vm.ratingCount > 0 {
+                    Text(String(format: String(localized: "detail_rating_average_format"), vm.averageRating, vm.ratingCount))
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                } else if vm.averageRating > 0 {
+                    Text(Film.formattedAverageRating(vm.averageRating))
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                }
             }
             .padding(.horizontal, Spacing.lg)
 
@@ -256,6 +257,7 @@ struct FilmDetailView: View {
     NavigationStack {
         FilmDetailView(filmId: 1, container: PreviewContainer())
             .environmentObject(NetworkMonitor())
+            .environmentObject(PreviewContainer().deepLinkHandler)
     }
     .preferredColorScheme(.dark)
 }

@@ -269,6 +269,74 @@ private final class PreviewNotificationsRepository: NotificationsRepositoryProto
     func markRead(notificationId: UUID) async throws {}
 }
 
+private final class PreviewForumRepository: ForumRepositoryProtocol {
+    private let categories: [ForumCategory] = [
+        ForumCategory(id: 1, name: "General", color: "#EF4444"),
+        ForumCategory(id: 2, name: "Filmmaking", color: "#8B5CF6"),
+        ForumCategory(id: 3, name: "Film Ideas", color: "#0891B2")
+    ]
+
+    private let posts: [ForumPost] = [
+        ForumPost(
+            id: 1,
+            title: "Best indie films this year?",
+            content: "What are you watching lately?",
+            authorDisplayName: "Sara",
+            likeCount: 12,
+            commentCount: 4,
+            createdAt: Date().addingTimeInterval(-86_400),
+            categoryId: 1,
+            category: ForumCategory(id: 1, name: "General")
+        ),
+        ForumPost(
+            id: 2,
+            title: "Hidden gem: Coastal Road",
+            content: "Highly recommend this one.",
+            authorDisplayName: "Omar",
+            likeCount: 8,
+            commentCount: 2,
+            createdAt: Date().addingTimeInterval(-172_800),
+            categoryId: 2,
+            category: ForumCategory(id: 2, name: "Filmmaking")
+        )
+    ]
+
+    private let comments: [ForumComment] = [
+        ForumComment(
+            id: 1,
+            postId: 1,
+            content: "I loved Desert Light.",
+            authorDisplayName: "Jamila",
+            createdAt: Date().addingTimeInterval(-43_200)
+        ),
+        ForumComment(
+            id: 2,
+            postId: 1,
+            content: "City Echoes was great too.",
+            authorDisplayName: "Alex",
+            createdAt: Date().addingTimeInterval(-21_600)
+        )
+    ]
+
+    func fetchCategories() async throws -> [ForumCategory] { categories }
+
+    func fetchPosts(categoryId: Int?) async throws -> [ForumPost] {
+        guard let categoryId else { return posts }
+        return posts.filter { $0.categoryId == categoryId }
+    }
+
+    func fetchPost(id: Int) async throws -> ForumPost {
+        guard let post = posts.first(where: { $0.id == id }) else {
+            throw ForumRepositoryError.postNotFound
+        }
+        return post
+    }
+
+    func fetchComments(postId: Int) async throws -> [ForumComment] {
+        comments.filter { $0.postId == postId }
+    }
+}
+
 // MARK: - Container
 
 /// SwiftUI previews and canvas: deterministic mocks for every `AppContainer` dependency.
@@ -281,6 +349,7 @@ final class PreviewContainer: AppContainer {
     private let previewIAP = PreviewIAPService()
     private let previewNetwork = PreviewNetworkMonitor()
     private let previewNotifications = PreviewNotificationsRepository()
+    private let previewForum = PreviewForumRepository()
     let deepLinkHandler = DeepLinkHandler()
 
     /// Real `NetworkMonitor` for `MainTabView` / banners (lightweight; uses `NWPathMonitor`).
@@ -295,6 +364,7 @@ final class PreviewContainer: AppContainer {
     var s3Service: S3SignedURLServiceProtocol { previewS3 }
     var networkMonitor: any NetworkMonitorProtocol { previewNetwork }
     var notificationsRepo: NotificationsRepositoryProtocol { previewNotifications }
+    var forumRepo: ForumRepositoryProtocol { previewForum }
 }
 
 // MARK: - Auth + environment helpers (Xcode previews)

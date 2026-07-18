@@ -9,6 +9,7 @@ final class LiveAppContainer: AppContainer {
 
     private lazy var filmsRepository = LiveFilmsRepository()
     private let notificationsRepository = LiveNotificationsRepository()
+    private lazy var forumRepository = LiveForumRepository()
 
     init() {
         pathMonitor = NetworkMonitor()
@@ -22,4 +23,5 @@ final class LiveAppContainer: AppContainer {
     lazy var s3Service: S3SignedURLServiceProtocol = S3SignedURLService()
     var networkMonitor: any NetworkMonitorProtocol { pathMonitor }
     var notificationsRepo: NotificationsRepositoryProtocol { notificationsRepository }
+    var forumRepo: ForumRepositoryProtocol { forumRepository }
 }

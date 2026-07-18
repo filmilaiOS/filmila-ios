@@ -5,8 +5,7 @@ struct ProfileView: View {
     @Environment(\.container) private var container
     @Environment(\.openURL) private var openURL
 
-    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
-    @AppStorage("app_preferred_language") private var preferredLanguage = "en"
+    @AppStorage(AppLanguage.storageKey) private var preferredLanguage = "en"
 
     @State private var isRestoringPurchases = false
     @State private var restoreErrorMessage: String?
@@ -125,15 +124,6 @@ struct ProfileView: View {
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.md)
             }
-
-            Divider().background(FilmilaColors.surfaceBright)
-
-            Toggle(String(localized: "profile_notifications"), isOn: $notificationsEnabled)
-                .font(.filmilaBody)
-                .foregroundStyle(FilmilaColors.textPrimary)
-                .tint(FilmilaColors.accent)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.md)
 
             Divider().background(FilmilaColors.surfaceBright)
 

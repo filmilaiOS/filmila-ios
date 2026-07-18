@@ -14,13 +14,16 @@ extension Color {
 }
 
 struct FilmilaColors {
-    static let background = Color(hex: "#080810")
+    /// Launch screen and auth bootstrap splash.
+    static let splashBackground = Color(hex: "#0b0b10")
+    static let background = Color(hex: "#0b0b10")
     static let surface = Color(hex: "#111118")
     static let surfaceElevated = Color(hex: "#1A1A24")
     static let surfaceBright = Color(hex: "#22222E")
-    static let accent = Color(hex: "#C9A96E")
-    static let accentSubtle = Color(hex: "#C9A96E").opacity(0.12)
-    static let accentBright = Color(hex: "#E2C08A")
+    /// Netflix-inspired accent.
+    static let accent = Color(hex: "#ff004b")
+    static let accentSubtle = Color(hex: "#ff004b").opacity(0.12)
+    static let accentBright = Color(hex: "#ff4f86")
     static let textPrimary = Color.white
     static let textSecondary = Color(white: 0.60)
     static let textMuted = Color(white: 0.36)
@@ -37,8 +40,8 @@ struct FilmilaColors {
     /// Hero carousel inactive page dot (outline style drawn in views).
     static let pageDotInactive = Color.white.opacity(0.35)
     /// Hero “Watch” pill (light fill on dark hero).
-    static let heroWatchButtonFill = Color.white
-    static let heroWatchButtonForeground = Color(hex: "#0A0A0A")
+    static let heroWatchButtonFill = Color(hex: "#ff004b")
+    static let heroWatchButtonForeground = Color.white
     /// Poster duration / rating capsule backdrop.
     static let posterBadgeBackdrop = Color.black.opacity(0.55)
     /// Shimmer highlight band (low / mid for gradient).

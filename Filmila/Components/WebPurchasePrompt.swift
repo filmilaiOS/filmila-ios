@@ -6,7 +6,7 @@ struct WebPurchasePrompt: View {
             Text(String(localized: "detail_web_purchase_title"))
                 .font(.filmilaBodyMedium)
                 .foregroundStyle(FilmilaColors.textPrimary)
-            Link(destination: URL(string: "https://filmila.com")!) {
+            Link(destination: URL(string: "https://www.filmila.com")!) {
                 Text(String(localized: "detail_web_purchase_link"))
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.accent)

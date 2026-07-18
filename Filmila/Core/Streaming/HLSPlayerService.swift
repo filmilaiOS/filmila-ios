@@ -43,6 +43,9 @@ final class HLSPlayerService: ObservableObject {
 
     private var preparedFilm: Film?
     private var observedItem: AVPlayerItem?
+    private var stallRecoveryCount = 0
+    private let maxStallRecoveries = 2
+    private var isRecoveringFromStall = false
 
     init(
         s3Service: S3SignedURLServiceProtocol,
@@ -58,17 +61,25 @@ final class HLSPlayerService: ObservableObject {
         cleanup()
         preparedFilm = film
         currentFilmId = film.id
+        stallRecoveryCount = 0
         playbackState = .loading
         isBuffering = true
 
-        let url: URL
-        if let hls = film.hlsUrl, let direct = URL(string: hls) {
-            url = direct
-        } else {
-            url = try await s3Service.fetchPlaybackURL(filmId: film.id)
-        }
+        configureAudioSession()
 
-        let item = AVPlayerItem(url: url)
+        let url = try await resolvePlaybackURL(for: film, forceSignedRefresh: false)
+        print("[FilmilaPlayback] prepare filmId=\(film.id) urlHost=\(url.host ?? "?")")
+
+        try await startPlayer(with: url, resumeFrom: resumeFrom)
+    }
+
+    private func startPlayer(with url: URL, resumeFrom: FilmProgress?) async throws {
+        let asset = AVURLAsset(url: url, options: [
+            AVURLAssetPreferPreciseDurationAndTimingKey: false
+        ])
+        let item = AVPlayerItem(asset: asset)
+        item.preferredForwardBufferDuration = 30
+
         let newPlayer = AVPlayer(playerItem: item)
         player = newPlayer
         observedItem = item
@@ -76,6 +87,8 @@ final class HLSPlayerService: ObservableObject {
         observeStalls(for: item)
         observeBuffering(for: item)
         observeProgress(for: newPlayer)
+
+        try await waitForPlayerItemReady(item)
 
         if let resumeFrom, resumeFrom.progressSeconds > 10 {
             let seekTime = CMTime(seconds: Double(resumeFrom.progressSeconds), preferredTimescale: 600)
@@ -93,7 +106,7 @@ final class HLSPlayerService: ObservableObject {
                 guard let self else { return }
                 guard observed === self.observedItem else { return }
                 if observed.status == .failed {
-                    await self.handleStall()
+                    await self.handlePlaybackFailure(item: observed)
                 }
             }
         }
@@ -159,50 +172,69 @@ final class HLSPlayerService: ObservableObject {
         }
     }
 
+    private func handlePlaybackFailure(item: AVPlayerItem) async {
+        guard !isRecoveringFromStall else { return }
+        let ns = item.error as NSError?
+        print("[FilmilaPlayback] item failed filmId=\(currentFilmId ?? -1) error=\(ns?.localizedDescription ?? "unknown") code=\(ns?.code ?? 0)")
+        await handleStall()
+    }
+
     func handleStall() async {
-        guard let film = preparedFilm, let filmId = currentFilmId else { return }
-        playbackState = .stalled
-        isBuffering = true
-
-        s3Service.invalidateCache(filmId: filmId)
-
-        let url: URL
-        do {
-            if let hls = film.hlsUrl, let direct = URL(string: hls) {
-                url = direct
-            } else {
-                url = try await s3Service.fetchPlaybackURL(filmId: filmId)
-            }
-        } catch {
-            playbackState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+        guard let film = preparedFilm else { return }
+        guard !isRecoveringFromStall else { return }
+        guard stallRecoveryCount < maxStallRecoveries else {
+            playbackState = .failed(String(localized: "player_error_unavailable"))
             isBuffering = false
             return
         }
 
+        isRecoveringFromStall = true
+        defer { isRecoveringFromStall = false }
+
+        stallRecoveryCount += 1
+        playbackState = .stalled
+        isBuffering = true
+
         let resumeSeconds = CMTimeGetSeconds(player?.currentTime() ?? .zero)
-        let item = AVPlayerItem(url: url)
 
-        removeItemObservers()
-        observedItem = item
-        observeStalls(for: item)
-        observeBuffering(for: item)
+        do {
+            let url = try await resolvePlaybackURL(for: film, forceSignedRefresh: true)
+            let asset = AVURLAsset(url: url)
+            let item = AVPlayerItem(asset: asset)
+            item.preferredForwardBufferDuration = 30
 
-        player?.replaceCurrentItem(with: item)
+            removeItemObservers()
+            observedItem = item
+            observeStalls(for: item)
+            observeBuffering(for: item)
 
-        if resumeSeconds.isFinite, resumeSeconds > 0 {
-            let seekTime = CMTime(seconds: resumeSeconds, preferredTimescale: 600)
-            await player?.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+            player?.replaceCurrentItem(with: item)
+            try await waitForPlayerItemReady(item)
+
+            if resumeSeconds.isFinite, resumeSeconds > 0 {
+                let seekTime = CMTime(seconds: resumeSeconds, preferredTimescale: 600)
+                await player?.seek(to: seekTime, toleranceBefore: .zero, toleranceAfter: .zero)
+            }
+
+            player?.play()
+            playbackState = .playing
+            isBuffering = false
+        } catch {
+            playbackState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            isBuffering = false
         }
-
-        player?.play()
-        playbackState = .playing
-        isBuffering = false
     }
 
     func handleNetworkChange(isConnected: Bool) {
         if isConnected {
-            if case .stalled = playbackState {
+            switch playbackState {
+            case .stalled:
                 Task { await handleStall() }
+            case .paused where player != nil:
+                player?.play()
+                playbackState = .playing
+            default:
+                break
             }
         } else {
             player?.pause()
@@ -226,10 +258,43 @@ final class HLSPlayerService: ObservableObject {
         observedItem = nil
         preparedFilm = nil
         currentFilmId = nil
+        stallRecoveryCount = 0
+        isRecoveringFromStall = false
         playbackState = .idle
         currentTime = 0
         duration = 0
         isBuffering = false
+    }
+
+    private func resolvePlaybackURL(for film: Film, forceSignedRefresh: Bool) async throws -> URL {
+        if !forceSignedRefresh, let direct = film.directPlaybackURL {
+            return direct
+        }
+        if forceSignedRefresh {
+            s3Service.invalidateCache(filmId: film.id)
+        }
+        return try await s3Service.fetchPlaybackURL(filmId: film.id)
+    }
+
+    private func configureAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .moviePlayback)
+        try? session.setActive(true)
+    }
+
+    private func waitForPlayerItemReady(_ item: AVPlayerItem, timeout: TimeInterval = 45) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            switch item.status {
+            case .readyToPlay:
+                return
+            case .failed:
+                throw item.error ?? PlaybackError.streamUnavailable
+            default:
+                try await Task.sleep(nanoseconds: 100_000_000)
+            }
+        }
+        throw PlaybackError.loadTimeout
     }
 
     private func removeItemObservers() {

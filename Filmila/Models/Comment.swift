@@ -10,8 +10,8 @@ struct Comment: Identifiable, Codable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id
         case filmId = "film_id"
-        case userId = "user_id"
-        case content
+        case userId = "viewer_id"
+        case content = "comment"
         case createdAt = "created_at"
     }
 
