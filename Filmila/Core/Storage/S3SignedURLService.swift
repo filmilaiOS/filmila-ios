@@ -51,127 +51,85 @@ final class S3SignedURLService: S3SignedURLServiceProtocol {
         cache.removeValue(forKey: filmId)
     }
 
-    /// Requests a time-limited signed playback URL from the Filmila backend (`/api/presign-upload` or `/api/presigned-playback`).
+    /// Requests a time-limited signed playback URL from the Filmila backend (`GET /api/presign-upload?filmId=`).
     /// The catalog `video_url` is a private S3 object key; this endpoint returns a presigned GET URL for AVPlayer.
+    /// presigned-playback fallback removed — that route is not deployed on production.
     func fetchPlaybackURL(filmId: Int) async throws -> URL {
         PlaybackLogger.log("S3SignedURLService.fetchPlaybackURL ENTER", filmId: filmId)
         if let cached = cachedURL(for: filmId) {
             PlaybackLogger.log("cache HIT url=\(PlaybackLogger.redactedURL(cached))", filmId: filmId)
             return cached
         }
-        PlaybackLogger.log("cache MISS — will call backend signing endpoints", filmId: filmId)
+        PlaybackLogger.log("cache MISS — will call presign-upload", filmId: filmId)
 
-        // Production serves playback signing at presign-upload; presigned-playback may be absent.
-        let endpoints: [Endpoint] = [
-            .presignUpload(filmId: filmId),
-            .presignedPlaybackURL(filmId: filmId)
-        ]
+        let endpoint = Endpoint.presignUpload(filmId: filmId)
+        let diagnosticsTag = "S3SignedURL[presign-upload]"
 
-        var lastError: Error = NetworkError.unknown
-        for endpoint in endpoints {
-            let endpointName = Self.endpointName(for: endpoint)
-            let diagnosticsTag = "S3SignedURL[\(endpointName)]"
-            do {
-                let request = try endpoint.urlRequest()
-                let exactURL = request.url?.absoluteString ?? "?"
-                PlaybackLogger.log(
-                    "signing endpoint READY method=\(request.httpMethod ?? "GET") url=\(exactURL) timeout=\(Self.signingRequestTimeout)s",
-                    filmId: filmId
-                )
-                PlaybackLogger.log("calling APIClient.request NOW", filmId: filmId)
-
-                // Compare AuthService published token vs Supabase client (loadProfile path uses Supabase client directly).
-                await logAuthServiceTokenComparison(diagnosticsTag: diagnosticsTag, filmId: filmId)
-
-                let response: SignedPlaybackURLResponse = try await APIClient.shared.request(
-                    endpoint,
-                    timeout: Self.signingRequestTimeout,
-                    diagnosticsTag: diagnosticsTag
-                )
-
-                PlaybackLogger.log("APIClient.request RETURNED endpoint=\(endpointName)", filmId: filmId)
-                guard let raw = response.resolvedURLString else {
-                    PlaybackLogger.log(
-                        "API response missing URL fields endpoint=\(endpointName)",
-                        filmId: filmId
-                    )
-                    lastError = NetworkError.unknown
-                    continue
-                }
-                guard let url = PlaybackURLNormalizer.url(from: raw) else {
-                    PlaybackLogger.log(
-                        "API response URL failed normalization endpoint=\(endpointName) raw=\(raw.prefix(120))",
-                        filmId: filmId
-                    )
-                    lastError = NetworkError.unknown
-                    continue
-                }
-                storeCachedURL(url, for: filmId)
-                PlaybackLogger.log(
-                    "resolved signed URL endpoint=\(endpointName) url=\(PlaybackLogger.redactedURL(url))",
-                    filmId: filmId
-                )
-                return url
-            } catch NetworkError.timeout {
-                PlaybackLogger.log(
-                    "signing request TIMED OUT endpoint=\(endpointName) url=\(exactURLForLogging(endpoint))",
-                    filmId: filmId
-                )
-                lastError = PlaybackError.signingTimeout
-            } catch NetworkError.unauthorized {
-                PlaybackLogger.log("API request UNAUTHORIZED endpoint=\(endpointName)", filmId: filmId)
-                lastError = PlaybackError.signInRequired
-            } catch NetworkError.notFound {
-                PlaybackLogger.log("API request NOT FOUND endpoint=\(endpointName)", filmId: filmId)
-                continue
-            } catch NetworkError.decodingError(let underlying) {
-                PlaybackLogger.logError(
-                    "API response DECODING FAILED endpoint=\(endpointName)",
-                    error: underlying,
-                    filmId: filmId
-                )
-                continue
-            } catch is CancellationError {
-                PlaybackLogger.log(
-                    "signing request CANCELLED (likely timeout) endpoint=\(endpointName)",
-                    filmId: filmId
-                )
-                lastError = PlaybackError.signingTimeout
-            } catch let urlError as URLError where urlError.code == .timedOut {
-                PlaybackLogger.logError(
-                    "signing request URLSession TIMED OUT endpoint=\(endpointName)",
-                    error: urlError,
-                    filmId: filmId
-                )
-                lastError = PlaybackError.signingTimeout
-            } catch {
-                PlaybackLogger.logError(
-                    "API request FAILED endpoint=\(endpointName) url=\(exactURLForLogging(endpoint))",
-                    error: error,
-                    filmId: filmId
-                )
-                lastError = error
-            }
-        }
-        PlaybackLogger.logError(
-            "S3SignedURLService.fetchPlaybackURL FAILED — all endpoints exhausted",
-            error: lastError,
+        let request = try endpoint.urlRequest()
+        let exactURL = request.url?.absoluteString ?? "?"
+        PlaybackLogger.log(
+            "signing endpoint READY method=\(request.httpMethod ?? "GET") url=\(exactURL) timeout=\(Self.signingRequestTimeout)s",
             filmId: filmId
         )
-        throw lastError
-    }
+        PlaybackLogger.log("calling APIClient.request NOW", filmId: filmId)
 
-    private static func endpointName(for endpoint: Endpoint) -> String {
-        switch endpoint {
-        case .presignUpload: return "presign-upload"
-        case .presignedPlaybackURL: return "presigned-playback"
-        case .recordIAPPurchase: return "record-iap-purchase"
-        case .sendTicketEmail: return "send-ticket-email"
+        await logAuthServiceTokenComparison(diagnosticsTag: diagnosticsTag, filmId: filmId)
+
+        do {
+            let response: SignedPlaybackURLResponse = try await APIClient.shared.request(
+                endpoint,
+                timeout: Self.signingRequestTimeout,
+                diagnosticsTag: diagnosticsTag
+            )
+
+            PlaybackLogger.log("APIClient.request RETURNED endpoint=presign-upload", filmId: filmId)
+            guard let raw = response.resolvedURLString else {
+                PlaybackLogger.log("API response missing URL fields endpoint=presign-upload", filmId: filmId)
+                throw NetworkError.unknown
+            }
+            guard let url = PlaybackURLNormalizer.url(from: raw) else {
+                PlaybackLogger.log(
+                    "API response URL failed normalization endpoint=presign-upload raw=\(raw.prefix(120))",
+                    filmId: filmId
+                )
+                throw NetworkError.unknown
+            }
+            storeCachedURL(url, for: filmId)
+            PlaybackLogger.log(
+                "resolved signed URL endpoint=presign-upload url=\(PlaybackLogger.redactedURL(url))",
+                filmId: filmId
+            )
+            return url
+        } catch NetworkError.timeout {
+            PlaybackLogger.log(
+                "signing request TIMED OUT endpoint=presign-upload url=\(exactURL)",
+                filmId: filmId
+            )
+            throw PlaybackError.signingTimeout
+        } catch NetworkError.unauthorized {
+            PlaybackLogger.log("API request UNAUTHORIZED endpoint=presign-upload", filmId: filmId)
+            throw PlaybackError.signInRequired
+        } catch is CancellationError {
+            PlaybackLogger.log(
+                "signing request CANCELLED (likely timeout) endpoint=presign-upload",
+                filmId: filmId
+            )
+            throw PlaybackError.signingTimeout
+        } catch let urlError as URLError where urlError.code == .timedOut {
+            PlaybackLogger.logError(
+                "signing request URLSession TIMED OUT endpoint=presign-upload",
+                error: urlError,
+                filmId: filmId
+            )
+            throw PlaybackError.signingTimeout
+        } catch {
+            PlaybackLogger.logError(
+                "API request FAILED endpoint=presign-upload url=\(exactURL)",
+                error: error,
+                filmId: filmId
+            )
+            throw error
         }
-    }
-
-    private func exactURLForLogging(_ endpoint: Endpoint) -> String {
-        (try? endpoint.urlRequest().url?.absoluteString) ?? "?"
     }
 
     func invalidateCache(filmId: Int) {

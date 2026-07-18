@@ -61,7 +61,8 @@ final class APIClient {
     private func performRequest<T: Decodable>(
         _ endpoint: Endpoint,
         timeout: TimeInterval?,
-        diagnosticsTag: String?
+        diagnosticsTag: String?,
+        isRetryAfter401: Bool = false
     ) async throws -> T {
         var request = try endpoint.urlRequest()
         let requestURL = request.url?.absoluteString ?? "?"
@@ -75,57 +76,28 @@ final class APIClient {
             )
         }
 
-        var attachedToken: String?
-        var sessionFetchError: Error?
-        var supabaseSessionExpired: Bool?
-
+        let supabaseSession: Session
         do {
-            let session = try await SupabaseManager.shared.client.auth.session
-            supabaseSessionExpired = session.isExpired
-            attachedToken = session.accessToken
+            supabaseSession = try await resolveSupabaseSession(forceRefresh: isRetryAfter401, diagnosticsTag: diagnosticsTag)
+        } catch {
             if let diagnosticsTag {
-                PlaybackLogger.log(
-                    "\(diagnosticsTag) Supabase client.auth.session OK isExpired=\(session.isExpired) userId=\(session.user.id.uuidString)",
-                    filmId: nil
-                )
-                if let meta = AuthTokenDiagnostics.metadata(for: session.accessToken) {
-                    PlaybackLogger.log("\(diagnosticsTag) client session token \(meta)", filmId: nil)
+                PlaybackLogger.logError("\(diagnosticsTag) Supabase session resolve FAILED", error: error, filmId: nil)
+            }
+            if keychainAuthBefore == nil {
+                if let diagnosticsTag {
+                    PlaybackLogger.log("\(diagnosticsTag) WARNING no auth token available for this request", filmId: nil)
                 }
             }
-        } catch {
-            sessionFetchError = error
-            if let diagnosticsTag {
-                PlaybackLogger.logError("\(diagnosticsTag) Supabase client.auth.session FAILED", error: error, filmId: nil)
-            }
+            throw error
         }
 
-        if let attachedToken, !attachedToken.isEmpty {
-            request.setValue("Bearer \(attachedToken)", forHTTPHeaderField: "Authorization")
-        } else if let diagnosticsTag {
-            PlaybackLogger.log(
-                "\(diagnosticsTag) NO Supabase access_token attached — request may use keychain bearer only or be anonymous",
-                filmId: nil
-            )
-        }
-
-        let finalAuth = request.value(forHTTPHeaderField: "Authorization")
-        if let diagnosticsTag {
-            PlaybackLogger.log(
-                "\(diagnosticsTag) Authorization header SENT: \(AuthTokenDiagnostics.describeAuthorizationHeader(finalAuth))",
-                filmId: nil
-            )
-            if supabaseSessionExpired == true {
-                PlaybackLogger.log(
-                    "\(diagnosticsTag) WARNING Supabase session.isExpired=true — token may be rejected with 401 until refreshSession runs",
-                    filmId: nil
-                )
-            }
-            if sessionFetchError != nil, keychainAuthBefore == nil {
-                PlaybackLogger.log("\(diagnosticsTag) WARNING no auth token available for this request", filmId: nil)
-            }
-        }
+        request.setValue("Bearer \(supabaseSession.accessToken)", forHTTPHeaderField: "Authorization")
 
         if let diagnosticsTag {
+            PlaybackLogger.log(
+                "\(diagnosticsTag) Authorization header SENT: \(AuthTokenDiagnostics.describeAuthorizationHeader(request.value(forHTTPHeaderField: "Authorization")))",
+                filmId: nil
+            )
             PlaybackLogger.log("\(diagnosticsTag) URLSession.data START method=\(request.httpMethod ?? "GET") url=\(requestURL)", filmId: nil)
         }
 
@@ -133,9 +105,17 @@ final class APIClient {
         let networkStarted = Date()
 
         let data: Data
-        let response: URLResponse
+        let http: HTTPURLResponse
         do {
+            let response: URLResponse
             (data, response) = try await activeSession.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                if let diagnosticsTag {
+                    PlaybackLogger.log("\(diagnosticsTag) URLSession.data DONE non-HTTP response", filmId: nil)
+                }
+                throw NetworkError.unknown
+            }
+            http = httpResponse
         } catch let urlError as URLError where urlError.code == .timedOut {
             if let diagnosticsTag {
                 PlaybackLogger.logError(
@@ -156,19 +136,19 @@ final class APIClient {
             throw error
         }
 
-        guard let http = response as? HTTPURLResponse else {
-            if let diagnosticsTag {
-                PlaybackLogger.log("\(diagnosticsTag) URLSession.data DONE non-HTTP response", filmId: nil)
-            }
-            throw NetworkError.unknown
-        }
-
         if let diagnosticsTag {
             let bodyPreview = String(data: data.prefix(200), encoding: .utf8) ?? "<binary>"
             PlaybackLogger.log(
                 "\(diagnosticsTag) URLSession.data DONE status=\(http.statusCode) bytes=\(data.count) elapsed=\(String(format: "%.2f", Date().timeIntervalSince(networkStarted)))s bodyPreview=\(bodyPreview.prefix(120))",
                 filmId: nil
             )
+        }
+
+        if http.statusCode == 401, !isRetryAfter401 {
+            if let diagnosticsTag {
+                PlaybackLogger.log("\(diagnosticsTag) HTTP 401 — refreshing session and retrying once", filmId: nil)
+            }
+            return try await performRequest(endpoint, timeout: timeout, diagnosticsTag: diagnosticsTag, isRetryAfter401: true)
         }
 
         switch http.statusCode {
@@ -185,10 +165,124 @@ final class APIClient {
             throw NetworkError.httpError(http.statusCode)
         }
 
+        try validateJSONResponse(data: data, http: http, url: requestURL, diagnosticsTag: diagnosticsTag)
+
         do {
             return try jsonDecoder.decode(T.self, from: data)
         } catch {
             throw NetworkError.decodingError(error)
+        }
+    }
+
+    /// Performs a request (e.g. POST) with the signed-in Supabase access token; does not decode a body.
+    func performAuthorized(_ request: URLRequest) async throws {
+        try await performAuthorizedRequest(request, isRetryAfter401: false)
+    }
+
+    private func performAuthorizedRequest(_ original: URLRequest, isRetryAfter401: Bool) async throws {
+        var request = original
+        let supabaseSession = try await resolveSupabaseSession(forceRefresh: isRetryAfter401, diagnosticsTag: nil)
+        request.setValue("Bearer \(supabaseSession.accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw NetworkError.unknown
+        }
+
+        if http.statusCode == 401, !isRetryAfter401 {
+            try await performAuthorizedRequest(original, isRetryAfter401: true)
+            return
+        }
+
+        switch http.statusCode {
+        case 200 ..< 300:
+            return
+        case 401:
+            throw NetworkError.unauthorized
+        case 404:
+            throw NetworkError.notFound
+        case 500 ..< 600:
+            let message = String(data: data, encoding: .utf8) ?? "Server error"
+            throw NetworkError.serverError(message)
+        default:
+            throw NetworkError.httpError(http.statusCode)
+        }
+    }
+
+    /// Returns a valid session, refreshing when expired or when `forceRefresh` is true (401 retry path).
+    private func resolveSupabaseSession(forceRefresh: Bool, diagnosticsTag: String?) async throws -> Session {
+        let auth = SupabaseManager.shared.client.auth
+
+        if forceRefresh {
+            let refreshed = try await auth.refreshSession()
+            await syncAuthServiceSession(refreshed)
+            if let diagnosticsTag {
+                PlaybackLogger.log(
+                    "\(diagnosticsTag) Supabase session force-refreshed userId=\(refreshed.user.id.uuidString)",
+                    filmId: nil
+                )
+            }
+            return refreshed
+        }
+
+        var current = try await auth.session
+        if let diagnosticsTag {
+            PlaybackLogger.log(
+                "\(diagnosticsTag) Supabase client.auth.session OK isExpired=\(current.isExpired) userId=\(current.user.id.uuidString)",
+                filmId: nil
+            )
+            if let meta = AuthTokenDiagnostics.metadata(for: current.accessToken) {
+                PlaybackLogger.log("\(diagnosticsTag) client session token \(meta)", filmId: nil)
+            }
+        }
+
+        if current.isExpired {
+            current = try await auth.refreshSession()
+            await syncAuthServiceSession(current)
+            if let diagnosticsTag {
+                PlaybackLogger.log(
+                    "\(diagnosticsTag) Supabase session was expired — refreshed before request userId=\(current.user.id.uuidString)",
+                    filmId: nil
+                )
+            }
+        }
+
+        return current
+    }
+
+    private func syncAuthServiceSession(_ session: Session) async {
+        await MainActor.run {
+            LiveAppContainer.shared?.sharedAuthService.syncPublishedSession(session)
+        }
+    }
+
+    private func validateJSONResponse(
+        data: Data,
+        http: HTTPURLResponse,
+        url: String,
+        diagnosticsTag: String?
+    ) throws {
+        let contentType = http.value(forHTTPHeaderField: "Content-Type")?.lowercased() ?? ""
+        let hasJSONContentType = contentType.contains("application/json") || contentType.contains("+json")
+        let firstByte = data.first { byte in
+            byte != 32 && byte != 9 && byte != 10 && byte != 13
+        }
+
+        if firstByte == UInt8(ascii: "<") {
+            let message = "Expected JSON but got non-JSON response from \(url), status=\(http.statusCode)"
+            if let diagnosticsTag {
+                PlaybackLogger.log("\(diagnosticsTag) \(message)", filmId: nil)
+            }
+            throw NetworkError.unexpectedResponse(message)
+        }
+
+        if !hasJSONContentType, let firstByte,
+           firstByte != UInt8(ascii: "{"), firstByte != UInt8(ascii: "[") {
+            let message = "Expected JSON but got non-JSON response from \(url), status=\(http.statusCode)"
+            if let diagnosticsTag {
+                PlaybackLogger.log("\(diagnosticsTag) \(message)", filmId: nil)
+            }
+            throw NetworkError.unexpectedResponse(message)
         }
     }
 
@@ -205,32 +299,5 @@ final class APIClient {
         let created = URLSession(configuration: config)
         timedSessions[requestTimeout] = created
         return created
-    }
-
-    /// Performs a request (e.g. POST) with the signed-in Supabase access token; does not decode a body.
-    func performAuthorized(_ request: URLRequest) async throws {
-        var request = request
-        if let token = try? await SupabaseManager.shared.client.auth.session.accessToken {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        let (data, response) = try await session.data(for: request)
-        guard let http = response as? HTTPURLResponse else {
-            throw NetworkError.unknown
-        }
-
-        switch http.statusCode {
-        case 200 ..< 300:
-            return
-        case 401:
-            throw NetworkError.unauthorized
-        case 404:
-            throw NetworkError.notFound
-        case 500 ..< 600:
-            let message = String(data: data, encoding: .utf8) ?? "Server error"
-            throw NetworkError.serverError(message)
-        default:
-            throw NetworkError.httpError(http.statusCode)
-        }
     }
 }

@@ -10,28 +10,13 @@ enum KeychainKeys {
 }
 
 enum Endpoint {
-    case presignedPlaybackURL(filmId: Int)
+    // presigned-playback removed — not deployed on production; presign-upload handles playback signing.
     case presignUpload(filmId: Int)
     case recordIAPPurchase(filmId: Int, transactionId: String, userId: String)
     case sendTicketEmail(filmId: Int, userId: String)
 
     func urlRequest() throws -> URLRequest {
         switch self {
-        case let .presignedPlaybackURL(filmId):
-            guard var components = URLComponents(
-                url: Env.apiBaseURL.appendingPathComponent("api/presigned-playback", isDirectory: false),
-                resolvingAgainstBaseURL: false
-            ) else {
-                throw EndpointError.invalidURL
-            }
-            components.queryItems = [URLQueryItem(name: "film_id", value: String(filmId))]
-            guard let url = components.url else {
-                throw EndpointError.invalidURL
-            }
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            return Self.applyBearer(to: request)
-
         case let .presignUpload(filmId):
             guard var components = URLComponents(
                 url: Env.apiBaseURL.appendingPathComponent("api/presign-upload", isDirectory: false),

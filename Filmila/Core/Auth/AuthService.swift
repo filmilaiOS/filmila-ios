@@ -70,6 +70,12 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         session?.accessToken
     }
 
+    /// Updates the published session after a Supabase SDK refresh triggered outside AuthService (e.g. APIClient).
+    @MainActor
+    func syncPublishedSession(_ session: Session) {
+        self.session = session
+    }
+
     var userEmail: String? {
 #if DEBUG
         if let previewUserEmailOverride { return previewUserEmailOverride }
