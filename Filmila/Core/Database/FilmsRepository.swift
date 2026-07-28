@@ -8,6 +8,7 @@ enum FilmsRepositoryError: Error {
 protocol FilmsRepositoryProtocol: AnyObject {
     func fetchApprovedFilms() async throws -> [Film]
     func fetchFilm(id: Int) async throws -> Film
+    func fetchFilmmakerProfile(filmmakerEmail: String) async throws -> FilmmakerProfile?
     func searchFilms(query: String, genre: String?) async throws -> [Film]
     func fetchFeatured() async throws -> [Film]
     func fetchTrending() async throws -> [Film]
@@ -35,7 +36,7 @@ protocol FilmsRepositoryProtocol: AnyObject {
 final class LiveFilmsRepository: FilmsRepositoryProtocol {
     /// Columns confirmed on the `films` table (avoid selecting or ordering by missing columns).
     private let filmSelectColumns =
-        "id,title,description,thumbnail_url,video_url,price,status,genre,duration,view_count,average_rating,updated_at"
+        "id,title,description,thumbnail_url,video_url,price,status,genre,duration,view_count,average_rating,filmmaker,updated_at"
 
     private var client: SupabaseClient { SupabaseManager.shared.client }
 
@@ -65,6 +66,10 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
             throw FilmsRepositoryError.filmNotFound
         }
         return film
+    }
+
+    func fetchFilmmakerProfile(filmmakerEmail: String) async throws -> FilmmakerProfile? {
+        try await PublicFilmmakerProfileFetcher.fetch(filmmakerEmail: filmmakerEmail)
     }
 
     func searchFilms(query: String, genre: String?) async throws -> [Film] {

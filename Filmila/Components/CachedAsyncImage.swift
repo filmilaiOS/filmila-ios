@@ -3,7 +3,7 @@ import UIKit
 
 // MARK: - Memory cache (serialized access around NSCache for explicit thread safety)
 
-private final class FilmilaImageMemoryCache: @unchecked Sendable {
+final class FilmilaImageMemoryCache: @unchecked Sendable {
     static let shared = FilmilaImageMemoryCache()
 
     private let lock = NSLock()
@@ -41,7 +41,7 @@ private final class FilmilaImageMemoryCache: @unchecked Sendable {
 
 // MARK: - URLSession + on-disk URLCache (persists between launches)
 
-private enum FilmilaImageURLSession {
+enum FilmilaImageURLSession {
     static let shared: URLSession = {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
         let diskDir = caches[0].appendingPathComponent("FilmilaImageURLCache", isDirectory: true)

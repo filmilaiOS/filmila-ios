@@ -7,6 +7,10 @@ protocol AuthSessionUserIdProviding: Sendable {
     func currentUserId() async -> UUID?
 }
 
+protocol AuthSessionEmailProviding: Sendable {
+    func currentUserEmail() async -> String?
+}
+
 protocol FilmPaymentCompletedQuerying: Sendable {
     func hasCompletedPayment(filmId: Int, viewerId: UUID) async throws -> Bool
 }
@@ -16,6 +20,14 @@ final class SupabaseAuthSessionUserIdProvider: AuthSessionUserIdProviding, @unch
 
     func currentUserId() async -> UUID? {
         (try? await client.auth.session)?.user.id
+    }
+}
+
+final class SupabaseAuthSessionEmailProvider: AuthSessionEmailProviding, @unchecked Sendable {
+    private var client: SupabaseClient { SupabaseManager.shared.client }
+
+    func currentUserEmail() async -> String? {
+        (try? await client.auth.session)?.user.email
     }
 }
 

@@ -49,6 +49,10 @@ final class HLSPlayerService: ObservableObject {
     private var stallRecoveryCount = 0
     private let maxStallRecoveries = 2
     private var isRecoveringFromStall = false
+    /// Stall-recovery-specific: cancellable so `cleanup()` on dismiss does not wait on stuck AVFoundation work.
+    private var stallRecoveryTask: Task<Void, Never>?
+    /// Stall-recovery-specific: short readiness cap (initial `preparePlayback` keeps the default 45s wait).
+    private let stallRecoveryReadyTimeout: TimeInterval = 8
 
     init(
         s3Service: S3SignedURLServiceProtocol,
@@ -166,7 +170,7 @@ final class HLSPlayerService: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 PlaybackLogger.log("notification AVPlayerItemPlaybackStalled", filmId: self?.currentFilmId)
-                await self?.handleStall()
+                self?.scheduleStallRecovery()
             }
         }
     }
@@ -266,21 +270,54 @@ final class HLSPlayerService: ObservableObject {
             return
         }
         PlaybackLogger.logError("handlePlaybackFailure", error: item.error, filmId: currentFilmId)
-        await handleStall()
+        scheduleStallRecovery()
     }
 
-    func handleStall() async {
+    // MARK: - Stall recovery (UI-responsiveness fixes; server-side faststart/HLS is the long-term fix)
+
+    /// Schedules stall recovery on a cancellable task so `cleanup()` / dismiss are not blocked by `await handleStall()`.
+    /// When `maxStallRecoveries == 0`, fail immediately — re-fetching the same CloudFront/S3 object cannot fix bitrate/faststart issues.
+    func scheduleStallRecovery() {
+        guard preparedFilm != nil else {
+            PlaybackLogger.log("scheduleStallRecovery aborted — no preparedFilm")
+            return
+        }
+        if maxStallRecoveries == 0 {
+            PlaybackLogger.log(
+                "scheduleStallRecovery fail-fast — skipping recovery (same URL cannot fix progressive stall)",
+                filmId: currentFilmId
+            )
+            player?.pause()
+            playbackState = .failed(String(localized: "player_error_unavailable"))
+            isBuffering = false
+            return
+        }
+        if let stallRecoveryTask, !stallRecoveryTask.isCancelled {
+            PlaybackLogger.log("scheduleStallRecovery skipped — recovery task already running", filmId: currentFilmId)
+            return
+        }
+        stallRecoveryTask?.cancel()
+        stallRecoveryTask = Task { @MainActor in
+            await performStallRecovery()
+        }
+    }
+
+    private func performStallRecovery() async {
         guard let film = preparedFilm else {
-            PlaybackLogger.log("handleStall aborted — no preparedFilm")
+            PlaybackLogger.log("performStallRecovery aborted — no preparedFilm")
+            return
+        }
+        if Task.isCancelled {
+            PlaybackLogger.log("performStallRecovery aborted — task cancelled before start", filmId: film.id)
             return
         }
         guard !isRecoveringFromStall else {
-            PlaybackLogger.log("handleStall skipped — already recovering", filmId: film.id)
+            PlaybackLogger.log("performStallRecovery skipped — already recovering", filmId: film.id)
             return
         }
         guard stallRecoveryCount < maxStallRecoveries else {
             PlaybackLogger.log(
-                "handleStall exhausted retries (\(maxStallRecoveries)) — setting failed state",
+                "performStallRecovery fail-fast — stall retries exhausted (\(maxStallRecoveries))",
                 filmId: film.id
             )
             playbackState = .failed(String(localized: "player_error_unavailable"))
@@ -289,22 +326,31 @@ final class HLSPlayerService: ObservableObject {
         }
 
         isRecoveringFromStall = true
-        defer { isRecoveringFromStall = false }
+        defer {
+            isRecoveringFromStall = false
+            stallRecoveryTask = nil
+        }
 
         stallRecoveryCount += 1
-        PlaybackLogger.log("handleStall attempt \(stallRecoveryCount)/\(maxStallRecoveries)", filmId: film.id)
+        PlaybackLogger.log(
+            "performStallRecovery attempt \(stallRecoveryCount)/\(maxStallRecoveries) readyTimeout=\(stallRecoveryReadyTimeout)s",
+            filmId: film.id
+        )
         playbackState = .stalled
         isBuffering = true
 
         let resumeSeconds = CMTimeGetSeconds(player?.currentTime() ?? .zero)
 
         do {
-            PlaybackLogger.log("handleStall resolvePlaybackURL forceSignedRefresh=true", filmId: film.id)
+            try Task.checkCancellation()
+            PlaybackLogger.log("performStallRecovery resolvePlaybackURL forceSignedRefresh=true", filmId: film.id)
             let url = try await resolvePlaybackURL(for: film, forceSignedRefresh: true)
-            PlaybackLogger.log("handleStall got URL=\(PlaybackLogger.redactedURL(url))", filmId: film.id)
-            let asset = AVURLAsset(url: url)
-            let item = AVPlayerItem(asset: asset)
-            item.preferredForwardBufferDuration = 30
+            try Task.checkCancellation()
+            PlaybackLogger.log("performStallRecovery got URL=\(PlaybackLogger.redactedURL(url))", filmId: film.id)
+
+            // Build asset/item off the main actor — only `replaceCurrentItem` / `play()` touch AVPlayer here.
+            let item = await StallRecoveryAssetBuilder.buildPlayerItem(for: url)
+            try Task.checkCancellation()
 
             removeItemObservers()
             observedItem = item
@@ -312,7 +358,13 @@ final class HLSPlayerService: ObservableObject {
             observeBuffering(for: item)
 
             player?.replaceCurrentItem(with: item)
-            try await waitForPlayerItemReady(item)
+
+            try await StallRecoveryAssetBuilder.waitUntilReady(
+                item,
+                timeout: stallRecoveryReadyTimeout,
+                filmId: film.id
+            )
+            try Task.checkCancellation()
 
             if resumeSeconds.isFinite, resumeSeconds > 0 {
                 let seekTime = CMTime(seconds: resumeSeconds, preferredTimescale: 600)
@@ -322,9 +374,11 @@ final class HLSPlayerService: ObservableObject {
             player?.play()
             playbackState = .playing
             isBuffering = false
-            PlaybackLogger.log("handleStall recovery SUCCESS", filmId: film.id)
+            PlaybackLogger.log("performStallRecovery SUCCESS", filmId: film.id)
+        } catch is CancellationError {
+            PlaybackLogger.log("performStallRecovery CANCELLED (dismiss/cleanup)", filmId: film.id)
         } catch {
-            PlaybackLogger.logError("handleStall recovery FAILED", error: error, filmId: film.id)
+            PlaybackLogger.logError("performStallRecovery FAILED", error: error, filmId: film.id)
             playbackState = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             isBuffering = false
         }
@@ -338,7 +392,7 @@ final class HLSPlayerService: ObservableObject {
         if isConnected {
             switch playbackState {
             case .stalled:
-                Task { await handleStall() }
+                scheduleStallRecovery()
             case .paused where player != nil:
                 player?.play()
                 playbackState = .playing
@@ -355,6 +409,11 @@ final class HLSPlayerService: ObservableObject {
 
     func cleanup() {
         PlaybackLogger.log("cleanup START", filmId: currentFilmId)
+        // Cancel recovery first so dismiss never waits on AVFoundation work.
+        stallRecoveryTask?.cancel()
+        stallRecoveryTask = nil
+        isRecoveringFromStall = false
+
         removeItemObservers()
 
         if let obs = timeObserver, let player {
@@ -363,13 +422,13 @@ final class HLSPlayerService: ObservableObject {
         timeObserver = nil
 
         player?.pause()
-        player?.replaceCurrentItem(with: nil)
+        // Release the player without replaceCurrentItem(with: nil) — that call can block the main
+        // thread while tearing down a large progressive download (e.g. 458 MB .mov).
         player = nil
         observedItem = nil
         preparedFilm = nil
         currentFilmId = nil
         stallRecoveryCount = 0
-        isRecoveringFromStall = false
         playbackState = .idle
         currentTime = 0
         duration = 0
@@ -463,5 +522,55 @@ final class HLSPlayerService: ObservableObject {
             NotificationCenter.default.removeObserver(failedToEndNotificationToken)
         }
         failedToEndNotificationToken = nil
+    }
+}
+
+// MARK: - Stall recovery asset builder (off-main-thread; stall-recovery path only)
+
+/// Keeps heavy `AVURLAsset` / readiness polling off `@MainActor` during stall recovery.
+/// Initial `preparePlayback` / `startPlayer` are unchanged and still use main-actor construction.
+private enum StallRecoveryAssetBuilder {
+    static func buildPlayerItem(for url: URL) async -> AVPlayerItem {
+        await Task.detached(priority: .userInitiated) {
+            let asset = AVURLAsset(url: url, options: [
+                AVURLAssetPreferPreciseDurationAndTimingKey: false
+            ])
+            let item = AVPlayerItem(asset: asset)
+            item.preferredForwardBufferDuration = 30
+            return item
+        }.value
+    }
+
+    static func waitUntilReady(_ item: AVPlayerItem, timeout: TimeInterval, filmId: Int?) async throws {
+        try await Task.detached(priority: .utility) {
+            let deadline = Date().addingTimeInterval(timeout)
+            var lastLoggedStatus: AVPlayerItem.Status?
+            var waitStarted = Date()
+            while Date() < deadline {
+                try Task.checkCancellation()
+                let status = item.status
+                if status != lastLoggedStatus {
+                    PlaybackLogger.log(
+                        "stallRecovery waitUntilReady status=\(PlaybackLogger.playerItemStatus(status)) elapsed=\(String(format: "%.1f", Date().timeIntervalSince(waitStarted)))s",
+                        filmId: filmId
+                    )
+                    lastLoggedStatus = status
+                }
+                switch status {
+                case .readyToPlay:
+                    return
+                case .failed:
+                    PlaybackLogger.logError("stallRecovery waitUntilReady item failed", error: item.error, filmId: filmId)
+                    throw item.error ?? PlaybackError.streamUnavailable
+                default:
+                    try await Task.sleep(nanoseconds: 100_000_000)
+                }
+            }
+            PlaybackLogger.log(
+                "stallRecovery waitUntilReady TIMEOUT after \(timeout)s lastStatus=\(PlaybackLogger.playerItemStatus(item.status))",
+                filmId: filmId
+            )
+            throw PlaybackError.loadTimeout
+        }.value
     }
 }

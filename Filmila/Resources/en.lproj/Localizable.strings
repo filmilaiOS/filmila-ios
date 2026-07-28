@@ -41,6 +41,13 @@
 "detail_rating_average_format" = "%.1f average · %d ratings";
 "detail_rating_heading" = "Ratings";
 "detail_rating_yours" = "Your rating";
+"detail_rate" = "Rate";
+"detail_rating_thanks_average_format" = "Thanks for rating · %@ average";
+"detail_rating_yours_stars_format" = "Thanks for rating · You rated %d stars";
+"detail_director" = "Director";
+"detail_director_fallback" = "Filmmaker";
+"detail_share_film" = "Share film";
+"common_done" = "Done";
 "detail_title" = "Film";
 "detail_unavailable_body" = "This film could not be loaded.";
 "detail_unavailable_title" = "Film unavailable";
@@ -97,6 +104,7 @@
 "notifications_title" = "Notifications";
 "payment_callback_title" = "Payment";
 "player_retry" = "Try again";
+"player_close" = "Close player";
 "player_error_unavailable" = "This film could not be played. Please try again.";
 "player_error_timeout" = "Playback timed out. Check your connection and try again.";
 "player_error_sign_in" = "Sign in to watch this film.";

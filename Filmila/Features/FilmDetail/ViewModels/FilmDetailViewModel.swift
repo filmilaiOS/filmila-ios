@@ -35,6 +35,8 @@ final class FilmDetailViewModel: ObservableObject {
     @Published private(set) var averageRating: Double = 0
     @Published private(set) var ratingCount: Int = 0
     @Published private(set) var userRating: Int?
+    @Published private(set) var ratingFeedbackMessage: String?
+    @Published private(set) var filmmakerProfile: FilmmakerProfile?
     @Published private(set) var isInWatchlist: Bool = false
     @Published private(set) var isInFavorites: Bool = false
     @Published private(set) var isLoading: Bool = false
@@ -82,6 +84,12 @@ final class FilmDetailViewModel: ObservableObject {
         userRating = try? await filmsRepo.fetchUserFilmRating(filmId: filmId)
         isInWatchlist = (try? await filmsRepo.isFilmInWatchlist(filmId: filmId)) ?? false
         isInFavorites = (try? await filmsRepo.isFilmInFavorites(filmId: filmId)) ?? false
+
+        if let email = film?.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !email.isEmpty {
+            filmmakerProfile = try? await filmsRepo.fetchFilmmakerProfile(filmmakerEmail: email)
+        } else {
+            filmmakerProfile = nil
+        }
 
         await checkAccess()
     }
@@ -193,9 +201,24 @@ final class FilmDetailViewModel: ObservableObject {
                 averageRating = agg.average
                 ratingCount = agg.count
             }
+            if averageRating > 0 {
+                ratingFeedbackMessage = String(
+                    format: String(localized: "detail_rating_thanks_average_format"),
+                    Film.formattedAverageRating(averageRating)
+                )
+            } else {
+                ratingFeedbackMessage = String(
+                    format: String(localized: "detail_rating_your_stars_format"),
+                    rating
+                )
+            }
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    func clearRatingFeedbackMessage() {
+        ratingFeedbackMessage = nil
     }
 
     func submitComment(_ text: String) async {

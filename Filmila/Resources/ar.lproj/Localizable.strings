@@ -41,6 +41,13 @@
 "detail_rating_average_format" = "متوسط %.1f · %d تقييم";
 "detail_rating_heading" = "التقييمات";
 "detail_rating_yours" = "تقييمك";
+"detail_rate" = "قيّم";
+"detail_rating_thanks_average_format" = "شكراً للتقييم · متوسط %@";
+"detail_rating_yours_stars_format" = "شكراً للتقييم · قيّمت %d نجوم";
+"detail_director" = "المخرج";
+"detail_director_fallback" = "صانع الفيلم";
+"detail_share_film" = "مشاركة الفيلم";
+"common_done" = "تم";
 "detail_title" = "فيلم";
 "detail_unavailable_body" = "تعذر تحميل هذا الفيلم.";
 "detail_unavailable_title" = "الفيلم غير متوفر";
@@ -97,6 +104,7 @@
 "notifications_title" = "الإشعارات";
 "payment_callback_title" = "الدفع";
 "player_retry" = "إعادة المحاولة";
+"player_close" = "إغلاق المشغّل";
 "player_error_unavailable" = "تعذر تشغيل هذا الفيلم. أعد المحاولة.";
 "player_error_timeout" = "انتهت مهلة التشغيل. تحقق من الاتصال وأعد المحاولة.";
 "player_error_sign_in" = "سجّل الدخول لمشاهدة هذا الفيلم.";

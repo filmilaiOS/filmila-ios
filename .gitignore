@@ -34,6 +34,10 @@ playground.xcworkspace
 
 .build/
 
+# Local video remux artifacts (large)
+scripts/film82-remux/
+scripts/codec-samples/
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However

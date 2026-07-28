@@ -10,6 +10,7 @@ struct FilmDetailView: View {
     @State private var commentDraft = ""
     @State private var playbackFilm: Film?
     @State private var userStarBinding: Int = 0
+    @State private var showRatingSheet = false
 
     init(filmId: Int, container: AppContainer) {
         self.container = container
@@ -21,7 +22,12 @@ struct FilmDetailView: View {
             if let film = vm.film {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.lg) {
-                        FilmHeroView(film: film)
+                        FilmHeroView(
+                            film: film,
+                            averageRating: vm.averageRating,
+                            ratingCount: vm.ratingCount,
+                            filmmaker: vm.filmmakerProfile
+                        )
                         actionButtons(film: film)
                         if let message = vm.errorMessage {
                             Text(message)
@@ -36,7 +42,6 @@ struct FilmDetailView: View {
                                 .padding(.horizontal, Spacing.lg)
                         }
                         descriptionSection(film: film)
-                        ratingSection
                         commentsSection
                     }
                     .padding(.bottom, Spacing.xxl)
@@ -50,6 +55,11 @@ struct FilmDetailView: View {
                         Task { await vm.completeWebCheckoutFlow() }
                     }
                     .ignoresSafeArea()
+                }
+                .sheet(isPresented: $showRatingSheet, onDismiss: {
+                    vm.clearRatingFeedbackMessage()
+                }) {
+                    ratingSheet
                 }
                 .onChange(of: deepLinkHandler.pendingRoute) { route in
                     guard let route else { return }
@@ -141,19 +151,62 @@ struct FilmDetailView: View {
                 .tint(FilmilaColors.accent)
 
                 Button {
-                    Task { await vm.toggleFavorite() }
+                    showRatingSheet = true
                 } label: {
                     Label(
-                        vm.isInFavorites ? String(localized: "detail_favorite_remove") : String(localized: "detail_favorite_add"),
-                        systemImage: vm.isInFavorites ? "heart.fill" : "heart"
+                        String(localized: "detail_rate"),
+                        systemImage: vm.userRating != nil ? "star.fill" : "star"
                     )
                     .font(.filmilaCaptionMd)
                 }
                 .buttonStyle(.bordered)
-                .tint(FilmilaColors.destructive)
+                .tint(FilmilaColors.accent)
             }
         }
         .padding(.horizontal, Spacing.lg)
+    }
+
+    private var ratingSheet: some View {
+        VStack(spacing: Spacing.lg) {
+            Text(String(localized: "detail_rate"))
+                .font(.filmilaTitleSm)
+                .foregroundStyle(FilmilaColors.textPrimary)
+
+            if let message = vm.ratingFeedbackMessage {
+                Text(message)
+                    .font(.filmilaBody)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(String(localized: "detail_rating_yours"))
+                    .font(.filmilaCaption)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+            }
+
+            StarRatingView(
+                rating: Binding(
+                    get: { userStarBinding },
+                    set: { newValue in
+                        userStarBinding = newValue
+                        if newValue >= 1, newValue <= 5 {
+                            Task { await vm.submitRating(newValue) }
+                        }
+                    }
+                ),
+                isInteractive: true
+            )
+
+            Button(String(localized: "common_done")) {
+                showRatingSheet = false
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(FilmilaColors.accent)
+        }
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity)
+        .background(FilmilaColors.background.ignoresSafeArea())
+        .presentationDetents([.height(260)])
+        .presentationDragIndicator(.visible)
     }
 
     private func purchaseButtonTitle(for film: Film) -> String {
@@ -169,49 +222,6 @@ struct FilmDetailView: View {
                     .foregroundStyle(FilmilaColors.textSecondary)
                     .padding(.horizontal, Spacing.lg)
             }
-        }
-    }
-
-    private var ratingSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(String(localized: "detail_rating_heading"))
-                .font(.filmilaTitleSm)
-                .foregroundStyle(FilmilaColors.textPrimary)
-                .padding(.horizontal, Spacing.lg)
-
-            HStack(alignment: .center, spacing: Spacing.md) {
-                let avgStars = min(5, max(0, Int(vm.averageRating.rounded())))
-                StarRatingView(rating: .constant(avgStars), isInteractive: false)
-                if vm.ratingCount > 0 {
-                    Text(String(format: String(localized: "detail_rating_average_format"), vm.averageRating, vm.ratingCount))
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                } else if vm.averageRating > 0 {
-                    Text(Film.formattedAverageRating(vm.averageRating))
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                }
-            }
-            .padding(.horizontal, Spacing.lg)
-
-            Text(String(localized: "detail_rating_yours"))
-                .font(.filmilaCaptionMd)
-                .foregroundStyle(FilmilaColors.textSecondary)
-                .padding(.horizontal, Spacing.lg)
-
-            StarRatingView(
-                rating: Binding(
-                    get: { userStarBinding },
-                    set: { newValue in
-                        userStarBinding = newValue
-                        if newValue >= 1, newValue <= 5 {
-                            Task { await vm.submitRating(newValue) }
-                        }
-                    }
-                ),
-                isInteractive: true
-            )
-            .padding(.horizontal, Spacing.lg)
         }
     }
 

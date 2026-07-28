@@ -93,6 +93,14 @@ private final class PreviewFilmsRepository: FilmsRepositoryProtocol {
         return film
     }
 
+    func fetchFilmmakerProfile(filmmakerEmail: String) async throws -> FilmmakerProfile? {
+        FilmmakerProfile(
+            id: UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!,
+            displayName: "Preview Director",
+            avatarUrl: "https://picsum.photos/seed/preview-director/200/200"
+        )
+    }
+
     func searchFilms(query: String, genre: String?) async throws -> [Film] {
         try await fetchApprovedFilms()
     }

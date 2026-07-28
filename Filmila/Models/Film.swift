@@ -21,6 +21,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
     let duration: Int?
     let viewCount: Int
     let averageRating: Double?
+    let filmmaker: String?
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -38,6 +39,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         case duration
         case viewCount = "view_count"
         case averageRating = "average_rating"
+        case filmmaker
         case createdAt = "updated_at"
     }
 
@@ -56,6 +58,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         duration: Int? = nil,
         viewCount: Int = 0,
         averageRating: Double? = nil,
+        filmmaker: String? = nil,
         createdAt: Date
     ) {
         self.id = id
@@ -72,6 +75,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         self.duration = duration
         self.viewCount = viewCount
         self.averageRating = averageRating
+        self.filmmaker = filmmaker
         self.createdAt = createdAt
     }
 
@@ -91,6 +95,7 @@ struct Film: Identifiable, Codable, Equatable, Sendable {
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         viewCount = try container.decodeIfPresent(Int.self, forKey: .viewCount) ?? 0
         averageRating = try container.decodeIfPresent(Double.self, forKey: .averageRating)
+        filmmaker = try container.decodeIfPresent(String.self, forKey: .filmmaker)
         createdAt = try container.decodeFilmilaTimestamp(forKey: .createdAt)
     }
 

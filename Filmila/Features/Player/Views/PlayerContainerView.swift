@@ -48,22 +48,16 @@ struct PlayerContainerView: View {
                 }
                 .padding(Spacing.lg)
             }
-
-            VStack {
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .symbolRenderingMode(.hierarchical)
-                            .font(.filmilaIconClose)
-                            .foregroundStyle(FilmilaColors.textPrimary.opacity(0.92))
-                    }
-                    .padding(Spacing.md)
-                    Spacer()
-                }
+        }
+        // Close sits above AVPlayerViewController in a safe-area inset so taps are not stolen by UIKit video chrome.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HStack {
+                closeButton
                 Spacer()
             }
+            .padding(.horizontal, Spacing.sm)
+            .padding(.top, Spacing.xs)
+            .background(Color.clear)
         }
         .task {
             PlaybackLogger.log("PlayerContainerView.task START — launching startPlayback()", filmId: vm.filmIdForLogging)
@@ -78,6 +72,28 @@ struct PlayerContainerView: View {
             PlaybackLogger.log("PlayerContainerView.onDisappear — cleanup()", filmId: vm.filmIdForLogging)
             vm.cleanup()
         }
+    }
+
+    private var closeButton: some View {
+        Button {
+            closePlayer()
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .symbolRenderingMode(.hierarchical)
+                .font(.filmilaIconClose)
+                .foregroundStyle(FilmilaColors.textPrimary.opacity(0.92))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(String(localized: "player_close")))
+    }
+
+    /// Stop AVFoundation work immediately, then dismiss — do not wait for `onDisappear` alone.
+    private func closePlayer() {
+        PlaybackLogger.log("PlayerContainerView.closePlayer — cleanup then dismiss", filmId: vm.filmIdForLogging)
+        vm.cleanup()
+        dismiss()
     }
 }
 
