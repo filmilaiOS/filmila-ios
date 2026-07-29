@@ -101,6 +101,8 @@
 		CC3B1A4A7ABB85212585C063 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09F736FFF06A76CC526F1469 /* ProfileView.swift */; };
 		CF1375D75A9DBF5D033D5ED8 /* S3SignedURLService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D180F3A28AEFA3AADCFB3317 /* S3SignedURLService.swift */; };
 		D35C535CF1F2B67675D91833 /* Comment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EF005D49C6795A299DDD7FD /* Comment.swift */; };
+		E1F2A3B4C5D6789012345678 /* DirectorProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A3B4C5D6E7890123456789 /* DirectorProfileView.swift */; };
+		E3F4A5B6C7D8901234567890 /* DirectorProfileViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A5B6C7D8E9012345678901 /* DirectorProfileViewModel.swift */; };
 		D47E0B2F3108D697F046E50E /* CommunityFeedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC5BAC566356591841A838E /* CommunityFeedViewModel.swift */; };
 		D7DB0BEC1B6B3C572F791E34 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42DB17825B62A3D693752CF /* RegisterView.swift */; };
 		D9F692C9DED5C8994A21E42E /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5655A0A00833B0909DF4D4A /* AuthService.swift */; };
@@ -262,6 +264,8 @@
 		F0E68EDB527574E3F6F804D6 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		F23FA85298A2F86669F532E9 /* StarRatingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRatingView.swift; sourceTree = "<group>"; };
 		F7CC7105A865E9A6ABECB076 /* FilmDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilmDetailView.swift; sourceTree = "<group>"; };
+		F2A3B4C5D6E7890123456789 /* DirectorProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectorProfileView.swift; sourceTree = "<group>"; };
+		F4A5B6C7D8E9012345678901 /* DirectorProfileViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectorProfileViewModel.swift; sourceTree = "<group>"; };
 		FEA1724C1B834E2F8C91C0F9 /* LandingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LandingView.swift; sourceTree = "<group>"; };
 		FFC21AFD75F1526A7AB914C2 /* SafariCheckoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariCheckoutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -618,6 +622,31 @@
 			path = FilmDetail;
 			sourceTree = "<group>";
 		};
+		B9C8D7E6F5A4321098765432 /* Director */ = {
+			isa = PBXGroup;
+			children = (
+				B8C7D6E5F4A3210987654321 /* ViewModels */,
+				B7C6D5E4F3A2109876543210 /* Views */,
+			);
+			path = Director;
+			sourceTree = "<group>";
+		};
+		B8C7D6E5F4A3210987654321 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				F4A5B6C7D8E9012345678901 /* DirectorProfileViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B7C6D5E4F3A2109876543210 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F2A3B4C5D6E7890123456789 /* DirectorProfileView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		AD9F89D91A87F0378F1C5083 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -692,6 +721,7 @@
 				A0C57A20911D1338E0977762 /* Auth */,
 				B2B8C9DC008EC7FD6546EFFF /* Community */,
 				AD247BF67266A8FE0C0DA099 /* FilmDetail */,
+				B9C8D7E6F5A4321098765432 /* Director */,
 				D94760E36C2DDE7F512A5F4C /* Home */,
 				25FE24BBB09787DE4CAFD3EE /* Library */,
 				A16CECFB5D3FA937D93DAB5B /* Notifications */,
@@ -925,6 +955,8 @@
 				F98C30AF96494031A4B4A17E /* CategoryPostsView.swift in Sources */,
 				72B04238744097D91519C7FD /* CategoryPostsViewModel.swift in Sources */,
 				D35C535CF1F2B67675D91833 /* Comment.swift in Sources */,
+				E1F2A3B4C5D6789012345678 /* DirectorProfileView.swift in Sources */,
+				E3F4A5B6C7D8901234567890 /* DirectorProfileViewModel.swift in Sources */,
 				C9B9F2B4D3705F5C673BAF69 /* CommentCell.swift in Sources */,
 				385CDFC5F538AD5A3302A8CB /* CommentDisplay.swift in Sources */,
 				A7566018CF9BBD3A6AD5559C /* CommunityFeedView.swift in Sources */,

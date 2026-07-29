@@ -46,7 +46,16 @@
 "detail_rating_yours_stars_format" = "شكراً للتقييم · قيّمت %d نجوم";
 "detail_director" = "المخرج";
 "detail_director_fallback" = "صانع الفيلم";
+"detail_director_profile_hint" = "يفتح ملف المخرج";
 "detail_share_film" = "مشاركة الفيلم";
+"director_profile_title" = "المخرج";
+"director_profile_share" = "مشاركة الملف";
+"director_profile_stat_rating" = "التقييم";
+"director_profile_stat_views" = "المشاهدات";
+"director_profile_stat_films" = "الأفلام";
+"director_profile_films_heading" = "الأفلام";
+"director_profile_unavailable_title" = "المخرج غير متاح";
+"director_profile_unavailable_body" = "تعذر تحميل ملف المخرج.";
 "common_done" = "تم";
 "detail_title" = "فيلم";
 "detail_unavailable_body" = "تعذر تحميل هذا الفيلم.";

@@ -97,8 +97,19 @@ private final class PreviewFilmsRepository: FilmsRepositoryProtocol {
         FilmmakerProfile(
             id: UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!,
             displayName: "Preview Director",
-            avatarUrl: "https://picsum.photos/seed/preview-director/200/200"
+            avatarUrl: "https://picsum.photos/seed/preview-director/200/200",
+            bio: "Short films with bold visual storytelling.",
+            location: "Riyadh",
+            email: "preview@filmila.com"
         )
+    }
+
+    func fetchFilmmakerProfile(directorId: UUID) async throws -> FilmmakerProfile? {
+        try await fetchFilmmakerProfile(filmmakerEmail: "preview@filmila.com")
+    }
+
+    func fetchApprovedFilms(filmmakerEmail: String) async throws -> [Film] {
+        try await fetchApprovedFilms()
     }
 
     func searchFilms(query: String, genre: String?) async throws -> [Film] {

@@ -24,6 +24,7 @@ struct FilmDetailView: View {
                     VStack(alignment: .leading, spacing: Spacing.lg) {
                         FilmHeroView(
                             film: film,
+                            container: container,
                             averageRating: vm.averageRating,
                             ratingCount: vm.ratingCount,
                             filmmaker: vm.filmmakerProfile

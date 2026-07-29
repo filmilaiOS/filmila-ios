@@ -46,7 +46,16 @@
 "detail_rating_yours_stars_format" = "Thanks for rating · You rated %d stars";
 "detail_director" = "Director";
 "detail_director_fallback" = "Filmmaker";
+"detail_director_profile_hint" = "Opens the director profile";
 "detail_share_film" = "Share film";
+"director_profile_title" = "Director";
+"director_profile_share" = "Share profile";
+"director_profile_stat_rating" = "Rating";
+"director_profile_stat_views" = "Views";
+"director_profile_stat_films" = "Films";
+"director_profile_films_heading" = "FILMS";
+"director_profile_unavailable_title" = "Director unavailable";
+"director_profile_unavailable_body" = "This director profile could not be loaded.";
 "common_done" = "Done";
 "detail_title" = "Film";
 "detail_unavailable_body" = "This film could not be loaded.";

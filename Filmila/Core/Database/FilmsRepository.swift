@@ -9,6 +9,8 @@ protocol FilmsRepositoryProtocol: AnyObject {
     func fetchApprovedFilms() async throws -> [Film]
     func fetchFilm(id: Int) async throws -> Film
     func fetchFilmmakerProfile(filmmakerEmail: String) async throws -> FilmmakerProfile?
+    func fetchFilmmakerProfile(directorId: UUID) async throws -> FilmmakerProfile?
+    func fetchApprovedFilms(filmmakerEmail: String) async throws -> [Film]
     func searchFilms(query: String, genre: String?) async throws -> [Film]
     func fetchFeatured() async throws -> [Film]
     func fetchTrending() async throws -> [Film]
@@ -70,6 +72,22 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
 
     func fetchFilmmakerProfile(filmmakerEmail: String) async throws -> FilmmakerProfile? {
         try await PublicFilmmakerProfileFetcher.fetch(filmmakerEmail: filmmakerEmail)
+    }
+
+    func fetchFilmmakerProfile(directorId: UUID) async throws -> FilmmakerProfile? {
+        try await PublicFilmmakerProfileFetcher.fetch(directorId: directorId)
+    }
+
+    func fetchApprovedFilms(filmmakerEmail: String) async throws -> [Film] {
+        let trimmed = filmmakerEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        return try await client.from("films")
+            .select(filmSelectColumns)
+            .eq("status", value: "approved")
+            .eq("filmmaker", value: trimmed)
+            .order("updated_at", ascending: false)
+            .execute()
+            .value
     }
 
     func searchFilms(query: String, genre: String?) async throws -> [Film] {

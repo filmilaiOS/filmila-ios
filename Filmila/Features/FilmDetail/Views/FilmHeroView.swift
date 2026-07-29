@@ -3,6 +3,7 @@ import UIKit
 
 struct FilmHeroView: View {
     let film: Film
+    let container: AppContainer
     var averageRating: Double = 0
     var ratingCount: Int = 0
     var filmmaker: FilmmakerProfile?
@@ -95,26 +96,40 @@ struct FilmHeroView: View {
     }
 
     private func directorSection(_ profile: FilmmakerProfile) -> some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text(String(localized: "detail_director"))
-                    .font(.filmilaLabel)
-                    .foregroundStyle(FilmilaColors.textMuted)
-                    .kerning(0.8)
+        HStack(alignment: .center, spacing: Spacing.md) {
+            NavigationLink {
+                DirectorProfileView(directorId: profile.id, container: container)
+            } label: {
+                HStack(alignment: .center, spacing: Spacing.md) {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text(String(localized: "detail_director"))
+                            .font(.filmilaLabel)
+                            .foregroundStyle(FilmilaColors.textMuted)
+                            .kerning(0.8)
 
-                DirectorAvatarView(
-                    urlString: profile.resolvedAvatarURL,
-                    initials: filmmakerInitials(profile),
-                    size: directorAvatarSize
-                )
+                        DirectorAvatarView(
+                            urlString: profile.resolvedAvatarURL,
+                            initials: filmmakerInitials(profile),
+                            size: directorAvatarSize
+                        )
 
-                Text(filmmakerDisplayName(profile))
-                    .font(.filmilaBodyMedium)
-                    .foregroundStyle(FilmilaColors.textPrimary)
-                    .lineLimit(2)
+                        Text(filmmakerDisplayName(profile))
+                            .font(.filmilaBodyMedium)
+                            .foregroundStyle(FilmilaColors.textPrimary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: Spacing.sm)
+
+                    Image(systemName: "chevron.right")
+                        .font(.filmilaCapsBadge)
+                        .foregroundStyle(FilmilaColors.textMuted)
+                }
+                .contentShape(Rectangle())
             }
-
-            Spacer(minLength: Spacing.md)
+            .buttonStyle(DirectorRowButtonStyle())
+            .accessibilityLabel(Text(filmmakerDisplayName(profile)))
+            .accessibilityHint(Text(String(localized: "detail_director_profile_hint")))
 
             ShareLink(item: shareURL) {
                 Image(systemName: "square.and.arrow.up")
@@ -142,6 +157,17 @@ struct FilmHeroView: View {
             return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
         }
         return String(source.prefix(2)).uppercased()
+    }
+}
+
+// MARK: - Director row press feedback
+
+private struct DirectorRowButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.72 : 1)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 
@@ -272,6 +298,7 @@ private struct DirectorAvatarView: View {
             filmmaker: "megrenfilms@gmail.com",
             createdAt: Date()
         ),
+        container: PreviewContainer(),
         averageRating: 4.5,
         ratingCount: 12,
         filmmaker: FilmmakerProfile(
