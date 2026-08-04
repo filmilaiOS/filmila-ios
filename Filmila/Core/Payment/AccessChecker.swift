@@ -1,5 +1,7 @@
 import Foundation
 
+/// Client-side playback entitlement checks.
+/// Canonical rules (must match server): `filmila-web/docs/PLAYBACK_ACCESS_SPEC.md`
 protocol AccessCheckerProtocol: AnyObject {
     func hasAccess(to film: Film) async throws -> Bool
 }

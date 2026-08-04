@@ -36,6 +36,7 @@ playground.xcworkspace
 
 # Local video remux artifacts (large)
 scripts/film82-remux/
+scripts/film83-remux/
 scripts/codec-samples/
 
 # CocoaPods
