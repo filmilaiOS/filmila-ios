@@ -123,6 +123,11 @@ struct MainTabView: View {
         .environment(\.mainTabSelection, $selectedTab)
         .environment(\.shellNavigation, shellNavigation)
         .environment(\.layoutDirection, AppLanguage.layoutDirection)
+        .onChange(of: auth.session?.user.id) { userId in
+            if userId != nil {
+                authSheet = nil
+            }
+        }
         .onChange(of: selectedTab) { newValue in
             if newValue == MenuTabTag.menu {
                 withAnimation(.easeInOut(duration: 0.25)) {
@@ -196,6 +201,7 @@ struct MainTabView: View {
                         }
                     }
             }
+            .environmentObject(auth)
         }
         .sheet(isPresented: $showCommunity) {
             NavigationStack {

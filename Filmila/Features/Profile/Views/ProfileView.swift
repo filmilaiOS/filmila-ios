@@ -26,6 +26,9 @@ struct ProfileView: View {
         .background(FilmilaColors.background.ignoresSafeArea())
         .navigationTitle(String(localized: "profile_title"))
         .navigationBarTitleDisplayMode(.large)
+        .task(id: auth.session?.user.id) {
+            await auth.refreshProfile()
+        }
         .alert(String(localized: "profile_restore_error_title"), isPresented: Binding(
             get: { restoreErrorMessage != nil },
             set: { if !$0 { restoreErrorMessage = nil } }
@@ -49,7 +52,17 @@ struct ProfileView: View {
                 .foregroundStyle(FilmilaColors.textPrimary)
                 .multilineTextAlignment(.center)
 
-            Text(auth.userEmail ?? String(localized: "profile_email_placeholder"))
+            if let roleLabel {
+                Text(roleLabel)
+                    .font(.filmilaCaptionMd)
+                    .foregroundStyle(FilmilaColors.accent)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, 6)
+                    .background(FilmilaColors.accentSubtle)
+                    .clipShape(Capsule())
+            }
+
+            Text(resolvedEmail)
                 .font(.filmilaCaption)
                 .foregroundStyle(FilmilaColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -59,11 +72,47 @@ struct ProfileView: View {
     }
 
     private var displayName: String {
-        let trimmed = auth.profile?.fullName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmed.isEmpty {
-            return trimmed
+        if let name = auth.profile?.resolvedDisplayName {
+            return name
         }
-        return String(localized: "profile_name_placeholder")
+        if let email = resolvedEmailIfAvailable {
+            return emailDisplayName(from: email)
+        }
+        return String(localized: "profile_name_unknown")
+    }
+
+    private var roleLabel: String? {
+        switch auth.profile?.normalizedRole {
+        case "FILMMAKER":
+            return String(localized: "profile_role_filmmaker")
+        case "VIEWER":
+            return String(localized: "profile_role_viewer")
+        default:
+            return nil
+        }
+    }
+
+    private var resolvedEmail: String {
+        resolvedEmailIfAvailable ?? String(localized: "profile_email_placeholder")
+    }
+
+    private var resolvedEmailIfAvailable: String? {
+        let candidates = [
+            auth.profile?.email,
+            auth.userEmail
+        ]
+        for candidate in candidates {
+            let trimmed = candidate?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty {
+                return trimmed
+            }
+        }
+        return nil
+    }
+
+    private func emailDisplayName(from email: String) -> String {
+        let local = email.split(separator: "@").first.map(String.init) ?? email
+        return local.replacingOccurrences(of: ".", with: " ").capitalized
     }
 
     private var avatar: some View {
@@ -91,17 +140,16 @@ struct ProfileView: View {
     }
 
     private var initials: String {
-        let source = auth.profile?.fullName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let source, !source.isEmpty {
-            let parts = source.split(separator: " ").map(String.init)
+        if let name = auth.profile?.resolvedDisplayName {
+            let parts = name.split(separator: " ").map(String.init)
             if parts.count >= 2 {
                 let a = parts[0].prefix(1)
                 let b = parts[1].prefix(1)
                 return "\(a)\(b)".uppercased()
             }
-            return String(source.prefix(2)).uppercased()
+            return String(name.prefix(2)).uppercased()
         }
-        if let email = auth.userEmail, let ch = email.first {
+        if let email = resolvedEmailIfAvailable, let ch = email.first {
             return String(ch).uppercased()
         }
         return "?"

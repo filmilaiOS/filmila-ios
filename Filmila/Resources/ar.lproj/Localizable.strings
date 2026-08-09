@@ -132,6 +132,9 @@
 "profile_lang_english" = "English";
 "profile_language" = "اللغة";
 "profile_name_placeholder" = "مشاهد";
+"profile_name_unknown" = "الحساب";
+"profile_role_filmmaker" = "صانع أفلام";
+"profile_role_viewer" = "مشاهد";
 "profile_notifications" = "الإشعارات";
 "profile_ok" = "حسناً";
 "profile_privacy" = "سياسة الخصوصية";

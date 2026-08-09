@@ -75,6 +75,8 @@ private final class PreviewAuthService: AuthServiceProtocol {
     func restoreSession() async {}
 
     func signOut() async throws {}
+
+    func refreshProfile() async {}
 }
 
 private final class PreviewFilmsRepository: FilmsRepositoryProtocol {

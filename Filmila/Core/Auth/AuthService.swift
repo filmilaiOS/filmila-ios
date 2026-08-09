@@ -48,6 +48,8 @@ protocol AuthServiceProtocol: AnyObject {
     var userEmail: String? { get }
     var isLoading: Bool { get }
     var currentToken: String? { get }
+    /// Reloads `profile` from Supabase when a session exists (e.g. profile sheet opened).
+    func refreshProfile() async
 }
 
 final class AuthService: AuthServiceProtocol, ObservableObject {
@@ -73,6 +75,9 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
     /// Updates the published session after a Supabase SDK refresh triggered outside AuthService (e.g. APIClient).
     @MainActor
     func syncPublishedSession(_ session: Session) {
+#if DEBUG
+        print("[FilmilaAuth] session synced from external refresh (APIClient) userId=\(session.user.id.uuidString)")
+#endif
         self.session = session
     }
 
@@ -112,8 +117,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
 #endif
         } catch {
             await MainActor.run {
-                self.session = nil
-                self.profile = nil
+                self.clearPublishedAuthState(reason: "login loadProfile failed")
             }
             throw error
         }
@@ -134,15 +138,13 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
                 try await loadProfile(userId: newSession.user.id)
             } catch {
                 await MainActor.run {
-                    self.session = nil
-                    self.profile = nil
+                    self.clearPublishedAuthState(reason: "register loadProfile failed")
                 }
                 throw error
             }
         } else {
             await MainActor.run {
-                self.session = nil
-                self.profile = nil
+                self.clearPublishedAuthState(reason: "register pending email verification (no session)")
             }
         }
     }
@@ -172,8 +174,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
                     print("[FilmilaAuth] restoreSession refresh failed (expired session): \(error)")
 #endif
                     await MainActor.run {
-                        self.session = nil
-                        self.profile = nil
+                        self.clearPublishedAuthState(reason: "restoreSession token refresh failed")
                     }
                     return
                 }
@@ -189,8 +190,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
             print("[FilmilaAuth] restoreSession no stored session / error: \(error) — clearing local session state")
 #endif
             await MainActor.run {
-                self.session = nil
-                self.profile = nil
+                self.clearPublishedAuthState(reason: "restoreSession no stored client.session")
             }
             return
         }
@@ -219,8 +219,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
             print("[FilmilaAuth] restoreSession loadProfile failed — clearing session: \(error)")
 #endif
             await MainActor.run {
-                self.session = nil
-                self.profile = nil
+                self.clearPublishedAuthState(reason: "restoreSession loadProfile failed (non-transient)")
             }
         }
     }
@@ -231,9 +230,29 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
 #endif
         try await supabaseManager.client.auth.signOut()
         await MainActor.run {
-            self.session = nil
-            self.profile = nil
+            clearPublishedAuthState(reason: "signOut() user initiated")
         }
+    }
+
+    func refreshProfile() async {
+        let userId = await MainActor.run { session?.user.id }
+        guard let userId else { return }
+        do {
+            try await loadProfile(userId: userId)
+        } catch {
+#if DEBUG
+            print("[FilmilaAuth] refreshProfile failed (session kept): \(error)")
+#endif
+        }
+    }
+
+    @MainActor
+    private func clearPublishedAuthState(reason: String, file: StaticString = #fileID, line: UInt = #line) {
+#if DEBUG
+        print("[FilmilaAuth] session cleared by: \(reason) (\(file):\(line))")
+#endif
+        session = nil
+        profile = nil
     }
 
     private func loadProfile(userId: UUID) async throws {
@@ -260,8 +279,7 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         } catch {
             try? await supabaseManager.client.auth.signOut()
             await MainActor.run {
-                self.session = nil
-                self.profile = nil
+                self.clearPublishedAuthState(reason: "loadProfile disallowed role")
             }
             throw error
         }

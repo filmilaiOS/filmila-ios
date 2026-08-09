@@ -132,6 +132,9 @@
 "profile_lang_english" = "English";
 "profile_language" = "Language";
 "profile_name_placeholder" = "Viewer";
+"profile_name_unknown" = "Account";
+"profile_role_filmmaker" = "Filmmaker";
+"profile_role_viewer" = "Viewer";
 "profile_notifications" = "Notifications";
 "profile_ok" = "OK";
 "profile_privacy" = "Privacy Policy";
