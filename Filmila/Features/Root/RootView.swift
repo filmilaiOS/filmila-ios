@@ -10,9 +10,9 @@ struct RootView: View {
         Group {
             if auth.isLoading {
                 SplashView()
-            } else if auth.session == nil {
-                AuthNavigationStack()
             } else {
+                // Always mount MainTabView so deep links and payment callbacks are consumed
+                // even when logged out; auth is presented from the drawer / My List sheets.
                 MainTabView(container: container)
             }
         }

@@ -29,7 +29,7 @@ struct CommunityFeedView: View {
             .padding(.bottom, Spacing.xxl)
         }
         .background(FilmilaColors.background.ignoresSafeArea())
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             await vm.load()
         }

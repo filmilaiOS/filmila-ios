@@ -50,7 +50,13 @@ struct SearchView: View {
     @Environment(\.container) private var container
     @Binding private var externalSearchQuery: String?
 
-    init(container: AppContainer, externalSearchQuery: Binding<String?> = .constant(nil)) {
+    @State private var showsGenreFilters = false
+    @State private var comingSoonTitle: String?
+
+    init(
+        container: AppContainer,
+        externalSearchQuery: Binding<String?> = .constant(nil)
+    ) {
         _vm = StateObject(wrappedValue: SearchViewModel(container: container))
         _externalSearchQuery = externalSearchQuery
     }
@@ -62,19 +68,29 @@ struct SearchView: View {
         return max(120, (screen - pad - mid) / 2)
     }
 
+    private var trimmedQuery: String {
+        vm.query.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 searchField
 
-                genreChips
+                SearchFilterPillsRow(showsGenreFilters: $showsGenreFilters) { title in
+                    comingSoonTitle = title
+                }
+
+                if showsGenreFilters {
+                    genreChips
+                }
 
                 if vm.isLoading {
                     shimmerGrid
-                } else if vm.results.isEmpty, vm.query.trimmingCharacters(in: .whitespacesAndNewlines).count >= 2 {
-                    emptyState
+                } else if vm.results.isEmpty, trimmedQuery.count >= 2 {
+                    noResultsState
                 } else if vm.results.isEmpty {
-                    Color.clear.frame(height: 1)
+                    defaultEmptyState
                 } else {
                     resultsGrid
                 }
@@ -82,8 +98,7 @@ struct SearchView: View {
             .padding(.bottom, Spacing.xxl)
         }
         .background(FilmilaColors.background.ignoresSafeArea())
-        .navigationTitle(String(localized: "search_title"))
-        .navigationBarTitleDisplayMode(.large)
+        .toolbar(.hidden, for: .navigationBar)
         .onChange(of: vm.query) { _ in
             vm.onSearchControlsChanged()
         }
@@ -99,13 +114,26 @@ struct SearchView: View {
         .onDisappear {
             vm.cancelPendingSearch()
         }
+        .alert(
+            comingSoonTitle ?? "",
+            isPresented: Binding(
+                get: { comingSoonTitle != nil },
+                set: { if !$0 { comingSoonTitle = nil } }
+            )
+        ) {
+            Button(String(localized: "detail_iap_close"), role: .cancel) {
+                comingSoonTitle = nil
+            }
+        } message: {
+            Text(String(localized: "shell_coming_soon_body"))
+        }
     }
 
     private var searchField: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(FilmilaColors.textMuted)
-            TextField(String(localized: "search_field_placeholder"), text: $vm.query)
+            TextField(String(localized: "search_field_placeholder_v2"), text: $vm.query)
                 .textFieldStyle(.plain)
                 .foregroundStyle(FilmilaColors.textPrimary)
                 .font(.filmilaBody)
@@ -196,7 +224,17 @@ struct SearchView: View {
         .padding(.horizontal, Spacing.lg)
     }
 
-    private var emptyState: some View {
+    private var defaultEmptyState: some View {
+        Text(String(localized: "search_empty_browse_hint"))
+            .font(.filmilaBody)
+            .foregroundStyle(FilmilaColors.textSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.top, Spacing.xxl)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Spacing.lg)
+    }
+
+    private var noResultsState: some View {
         Text(String(localized: "search_empty"))
             .font(.filmilaBody)
             .foregroundStyle(FilmilaColors.textSecondary)

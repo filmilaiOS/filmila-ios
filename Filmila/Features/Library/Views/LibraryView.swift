@@ -3,11 +3,23 @@ import UIKit
 
 struct LibraryView: View {
     @StateObject private var vm: LibraryViewModel
+    @StateObject private var homeVM: HomeViewModel
+    @EnvironmentObject private var auth: AuthService
     @Environment(\.container) private var container
     @Environment(\.mainTabSelection) private var mainTabSelection
 
-    init(container: AppContainer) {
+    var onCreateAccount: () -> Void = {}
+    var onLogIn: () -> Void = {}
+
+    init(
+        container: AppContainer,
+        onCreateAccount: @escaping () -> Void = {},
+        onLogIn: @escaping () -> Void = {}
+    ) {
         _vm = StateObject(wrappedValue: LibraryViewModel(container: container))
+        _homeVM = StateObject(wrappedValue: HomeViewModel(container: container))
+        self.onCreateAccount = onCreateAccount
+        self.onLogIn = onLogIn
     }
 
     private var posterColumnWidth: CGFloat {
@@ -19,18 +31,29 @@ struct LibraryView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                librarySegmentedControl
-
-                tabContent
+            if auth.session == nil {
+                MyListLoggedOutView(
+                    recommendedFilms: homeVM.recentlyAdded,
+                    averageRatingByFilmId: homeVM.averageRatingByFilmId,
+                    onCreateAccount: onCreateAccount,
+                    onLogIn: onLogIn
+                )
+            } else {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
+                    librarySegmentedControl
+                    tabContent
+                }
             }
-            .padding(.bottom, Spacing.xxl)
         }
+        .padding(.bottom, Spacing.xxl)
         .background(FilmilaColors.background.ignoresSafeArea())
-        .navigationTitle(String(localized: "library_title"))
-        .navigationBarTitleDisplayMode(.large)
-        .task {
-            await vm.load()
+        .toolbar(.hidden, for: .navigationBar)
+        .task(id: auth.session?.user.id) {
+            if auth.session == nil {
+                await homeVM.loadAll()
+            } else {
+                await vm.load()
+            }
         }
     }
 
