@@ -247,7 +247,7 @@
 		9AACEAA384CC0C46416072D0 /* Filmila.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Filmila.entitlements; sourceTree = "<group>"; };
 		9E05D3CF1F3CCA1ACA8B1F48 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		9E52A24B0B11F787CD335303 /* HeroFilmSlide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroFilmSlide.swift; sourceTree = "<group>"; };
-		9F5194E2D0E1C4352033AFBC /* Filmila.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Filmila.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9F5194E2D0E1C4352033AFBC /* Filmila.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Filmila.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F60181584EF4D5F61267831 /* NotificationsPlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsPlaceholder.swift; sourceTree = "<group>"; };
 		A1E92627E694DF566441D989 /* AuthServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthServiceTests.swift; sourceTree = "<group>"; };
 		A3F15F672E99FEFDCA3DBC60 /* ForumPost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForumPost.swift; sourceTree = "<group>"; };
@@ -939,8 +939,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = EE4C2E3FF5AD5B09AF740DBE /* Build configuration list for PBXProject "Filmila" */;
 			developmentRegion = en;
@@ -1153,6 +1151,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Filmila/Supporting/Filmila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = SR4R969C56;
 				ENABLE_TESTABILITY = YES;
 				INFOPLIST_FILE = Filmila/Supporting/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Filmila;
@@ -1177,6 +1176,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Filmila/Supporting/Filmila.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = SR4R969C56;
 				ENABLE_TESTABILITY = YES;
 				INFOPLIST_FILE = Filmila/Supporting/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Filmila;

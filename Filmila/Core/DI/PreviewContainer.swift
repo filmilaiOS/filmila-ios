@@ -399,6 +399,8 @@ extension PreviewContainer {
             id: UUID(uuidString: "00000000-0000-0000-0000-0000000000D1")!,
             role: "VIEWER",
             fullName: "Jamila",
+            displayName: "Jamila",
+            email: "jamila@example.com",
             avatarUrl: "https://picsum.photos/seed/avatar/400/400",
             apnsToken: nil
         )

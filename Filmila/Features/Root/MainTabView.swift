@@ -126,6 +126,9 @@ struct MainTabView: View {
         .onChange(of: auth.session?.user.id) { userId in
             if userId != nil {
                 authSheet = nil
+            } else {
+                showProfile = false
+                selectedTab = MenuTabTag.home
             }
         }
         .onChange(of: selectedTab) { newValue in
