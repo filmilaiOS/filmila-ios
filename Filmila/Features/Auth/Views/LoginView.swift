@@ -9,31 +9,32 @@ struct LoginView: View {
 
     var body: some View {
         ZStack {
-            FilmilaColors.background.ignoresSafeArea()
-
-            ScrollView {
+            AuthScreenChrome(
+                title: String(localized: "auth_sign_in"),
+                subtitle: String(localized: "auth_sign_in_subtitle")
+            ) {
                 VStack(alignment: .leading, spacing: Spacing.md) {
-                    TextField(String(localized: "auth_email"), text: $viewModel.email)
-                        .textContentType(.username)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.next)
-                        .padding()
-                        .background(FilmilaColors.surface)
-                        .cornerRadius(8)
-                        .disabled(viewModel.isLoading)
+                    AuthFormField(title: String(localized: "auth_email")) {
+                        TextField(String(localized: "auth_email"), text: $viewModel.email)
+                            .textContentType(.username)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.next)
+                            .foregroundStyle(FilmilaColors.textPrimary)
+                            .disabled(viewModel.isLoading)
+                    }
 
-                    SecureField(String(localized: "auth_password"), text: $viewModel.password)
-                        .textContentType(.password)
-                        .submitLabel(.go)
-                        .onSubmit {
-                            Task { await viewModel.login() }
-                        }
-                        .padding()
-                        .background(FilmilaColors.surface)
-                        .cornerRadius(8)
-                        .disabled(viewModel.isLoading)
+                    AuthFormField(title: String(localized: "auth_password")) {
+                        SecureField(String(localized: "auth_password"), text: $viewModel.password)
+                            .textContentType(.password)
+                            .submitLabel(.go)
+                            .foregroundStyle(FilmilaColors.textPrimary)
+                            .onSubmit {
+                                Task { await viewModel.login() }
+                            }
+                            .disabled(viewModel.isLoading)
+                    }
 
                     if let error = viewModel.errorMessage {
                         Text(error)
@@ -50,18 +51,18 @@ struct LoginView: View {
                     }
                     .buttonStyle(FilmilaPrimaryButtonStyle())
                     .disabled(viewModel.isLoading)
+                    .padding(.top, Spacing.sm)
 
                     NavigationLink {
                         ForgotPasswordView()
                     } label: {
                         Text(String(localized: "auth_forgot_password"))
-                            .font(.filmilaCaption)
+                            .font(.filmilaCaptionMd)
                             .foregroundStyle(FilmilaColors.accent)
                             .frame(maxWidth: .infinity)
                     }
                     .disabled(viewModel.isLoading)
                 }
-                .padding(Spacing.lg)
             }
 
             if viewModel.isLoading {
@@ -73,10 +74,12 @@ struct LoginView: View {
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textSecondary)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(FilmilaColors.background.opacity(0.55))
             }
         }
-        .navigationTitle(String(localized: "auth_sign_in"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

@@ -18,9 +18,7 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                HomeTopTabsBar(selected: $selectedBrowseTab)
-
+            VStack(alignment: .leading, spacing: 0) {
                 browseTabContent
 
                 if let error = vm.error {
@@ -40,6 +38,7 @@ struct HomeView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(FilmilaColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task {
@@ -81,8 +80,22 @@ struct HomeView: View {
             )
         }
 
+        FilmRowSection(
+            title: String(localized: "home_trending"),
+            films: vm.trending,
+            averageRatingByFilmId: vm.averageRatingByFilmId,
+            accentHeader: true,
+            systemImage: "sparkles"
+        )
+
         RecentReleasesRow(
             films: vm.recentlyAdded,
+            averageRatingByFilmId: vm.averageRatingByFilmId
+        )
+
+        FilmRowSection(
+            title: String(localized: "home_popular"),
+            films: vm.featured,
             averageRatingByFilmId: vm.averageRatingByFilmId
         )
     }
@@ -90,11 +103,7 @@ struct HomeView: View {
     @ViewBuilder
     private var genresBrowseContent: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text(String(localized: "shell_browse_genres"))
-                .font(.filmilaTitleSm)
-                .foregroundStyle(FilmilaColors.textPrimary)
-                .padding(.horizontal, Spacing.lg)
-                .padding(.top, Spacing.md)
+            FilmilaSectionHeader(title: String(localized: "shell_browse_genres"))
 
             let genres = Array(
                 Set(vm.recentlyAdded.compactMap { $0.genre?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })

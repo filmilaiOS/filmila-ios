@@ -39,11 +39,15 @@ struct FilmPosterCard: View {
                 }
             }
             .frame(width: width, height: posterHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+            )
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(film.displayTitle)
-                    .font(.filmilaTitleSm)
+                    .font(.filmilaBodyMedium)
                     .foregroundStyle(FilmilaColors.textPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -79,6 +83,7 @@ struct FilmPosterCard: View {
                     HStack(spacing: 3) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(FilmilaColors.accent)
                         Text(Film.formattedAverageRating(averageRating))
                             .font(.filmilaCapsBadge)
                     }

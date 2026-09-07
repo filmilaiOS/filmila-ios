@@ -4,16 +4,25 @@ struct FilmRowSection: View {
     let title: String
     let films: [Film]
     var averageRatingByFilmId: [Int: Double] = [:]
+    var accentHeader: Bool = false
+    var systemImage: String?
     @Environment(\.container) private var container
 
     var body: some View {
         if !films.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text(title)
-                    .font(.filmilaLabel)
-                    .foregroundStyle(FilmilaColors.textPrimary)
-                    .tracking(2.2)
-                    .padding(.horizontal, Spacing.lg)
+                if accentHeader || systemImage != nil {
+                    FilmilaSectionHeader(
+                        title: title,
+                        systemImage: systemImage,
+                        accentTitle: accentHeader
+                    )
+                } else {
+                    Text(title)
+                        .font(.filmilaTitleSm)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+                        .padding(.horizontal, Spacing.lg)
+                }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: Spacing.md) {
@@ -47,7 +56,9 @@ struct FilmRowSection: View {
                 Film(id: 1, title: "A", price: 0, status: .approved, genre: "Drama", duration: 3000, viewCount: 0, createdAt: Date()),
                 Film(id: 2, title: "B", price: 12, status: .approved, genre: "Thriller", duration: 4200, viewCount: 0, createdAt: Date())
             ],
-            averageRatingByFilmId: [1: 4.1, 2: 3.8]
+            averageRatingByFilmId: [1: 4.1, 2: 3.8],
+            accentHeader: true,
+            systemImage: "sparkles"
         )
     }
     .environment(\.container, PreviewContainer())

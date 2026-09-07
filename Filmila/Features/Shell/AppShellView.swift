@@ -5,6 +5,8 @@ struct AppShellView<Content: View>: View {
     @Binding var isDrawerOpen: Bool
     @ViewBuilder let content: () -> Content
 
+    @Environment(\.shellNavigation) private var shellNavigation
+
     var body: some View {
         ZStack(alignment: .leading) {
             VStack(spacing: 0) {
@@ -21,7 +23,7 @@ struct AppShellView<Content: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if isDrawerOpen {
-                Color.black.opacity(0.45)
+                Color.black.opacity(0.55)
                     .ignoresSafeArea()
                     .onTapGesture {
                         withAnimation(.easeInOut(duration: 0.25)) {

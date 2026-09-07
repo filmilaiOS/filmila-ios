@@ -43,6 +43,7 @@ struct FilmDetailView: View {
                                 .padding(.horizontal, Spacing.lg)
                         }
                         descriptionSection(film: film)
+                        ratingReviewsSection
                         commentsSection
                     }
                     .padding(.bottom, Spacing.xxl)
@@ -122,7 +123,7 @@ struct FilmDetailView: View {
                 Button {
                     playbackFilm = film
                 } label: {
-                    Text(String(localized: "detail_watch"))
+                    Label(String(localized: "home_watch_now"), systemImage: "play.fill")
                         .font(.filmilaBodyMedium)
                 }
                 .buttonStyle(FilmilaPrimaryButtonStyle())
@@ -144,12 +145,12 @@ struct FilmDetailView: View {
                 } label: {
                     Label(
                         vm.isInWatchlist ? String(localized: "detail_watchlist_remove") : String(localized: "detail_watchlist_add"),
-                        systemImage: vm.isInWatchlist ? "checkmark.circle.fill" : "plus.circle"
+                        systemImage: vm.isInWatchlist ? "checkmark" : "plus"
                     )
                     .font(.filmilaCaptionMd)
                 }
-                .buttonStyle(.bordered)
-                .tint(FilmilaColors.accent)
+                .buttonStyle(FilmilaSecondaryButtonStyle())
+                .frame(maxWidth: .infinity)
 
                 Button {
                     showRatingSheet = true
@@ -160,8 +161,8 @@ struct FilmDetailView: View {
                     )
                     .font(.filmilaCaptionMd)
                 }
-                .buttonStyle(.bordered)
-                .tint(FilmilaColors.accent)
+                .buttonStyle(FilmilaSecondaryButtonStyle())
+                .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal, Spacing.lg)
@@ -216,21 +217,101 @@ struct FilmDetailView: View {
     }
 
     private func descriptionSection(film: Film) -> some View {
-        Group {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             if let desc = film.displayDescription, !desc.isEmpty {
                 Text(desc)
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textSecondary)
-                    .padding(.horizontal, Spacing.lg)
             }
+
+            if let genre = film.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.sm) {
+                        ForEach(genreTags(from: genre), id: \.self) { tag in
+                            Text("#\(tag)")
+                                .font(.filmilaCaptionMd)
+                                .foregroundStyle(FilmilaColors.textSecondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(FilmilaColors.surfaceElevated)
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+    }
+
+    private func genreTags(from genre: String) -> [String] {
+        genre
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+
+    private var ratingReviewsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(String(localized: "detail_rating_reviews_heading"))
+                .font(.filmilaLabel)
+                .foregroundStyle(FilmilaColors.textMuted)
+                .kerning(1.2)
+                .padding(.horizontal, Spacing.lg)
+
+            HStack(alignment: .center, spacing: Spacing.lg) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(format: "%.1f / 5", vm.averageRating))
+                        .font(.filmilaDisplayMd)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+
+                    StarRatingView(
+                        rating: .constant(Int(vm.averageRating.rounded())),
+                        isInteractive: false
+                    )
+
+                    Text(String(format: String(localized: "detail_rating_total_format"), vm.ratingCount))
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                VStack(alignment: .trailing, spacing: Spacing.sm) {
+                    Text(String(localized: "detail_rate_this_film"))
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+
+                    Button {
+                        showRatingSheet = true
+                    } label: {
+                        StarRatingView(
+                            rating: Binding(
+                                get: { userStarBinding },
+                                set: { _ in showRatingSheet = true }
+                            ),
+                            isInteractive: false
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(Spacing.lg)
+            .background(FilmilaColors.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+            )
+            .padding(.horizontal, Spacing.lg)
         }
     }
 
     private var commentsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             Text(String(localized: "detail_comments_heading"))
-                .font(.filmilaTitleSm)
-                .foregroundStyle(FilmilaColors.textPrimary)
+                .font(.filmilaLabel)
+                .foregroundStyle(FilmilaColors.textMuted)
+                .kerning(1.2)
                 .padding(.horizontal, Spacing.lg)
 
             ForEach(vm.comments) { comment in
@@ -242,8 +323,8 @@ struct FilmDetailView: View {
                 TextField(String(localized: "detail_comment_placeholder"), text: $commentDraft, axis: .vertical)
                     .textFieldStyle(.plain)
                     .padding(Spacing.md)
-                    .background(FilmilaColors.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .background(FilmilaColors.surfaceElevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .lineLimit(1 ... 4)
 
                 Button {

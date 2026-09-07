@@ -1,32 +1,36 @@
 import SwiftUI
 
-/// Solid white primary CTA for the klipist-style shell (Watch, Sign in, Create account).
-struct FilmilaWhiteButtonStyle: ButtonStyle {
+/// Pink primary CTA (Watch Now) with optional play icon in label.
+struct FilmilaAccentButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(FilmilaColors.textInverse)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .frame(height: 50)
+            .background(FilmilaColors.accent)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
-/// White outline secondary CTA (+ My List, Log in, Sign up outline).
-struct FilmilaWhiteOutlineButtonStyle: ButtonStyle {
+/// Pink outline secondary CTA (In Watchlist / + My List).
+struct FilmilaAccentOutlineButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(FilmilaColors.textPrimary)
+            .foregroundStyle(FilmilaColors.accent)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(height: 50)
             .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(Color.white.opacity(0.85), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(FilmilaColors.accent, lineWidth: 1.5)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
+
+/// Legacy aliases used across the app.
+typealias FilmilaWhiteButtonStyle = FilmilaAccentButtonStyle
+typealias FilmilaWhiteOutlineButtonStyle = FilmilaAccentOutlineButtonStyle

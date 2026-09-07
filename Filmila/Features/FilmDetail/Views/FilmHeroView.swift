@@ -96,52 +96,71 @@ struct FilmHeroView: View {
     }
 
     private func directorSection(_ profile: FilmmakerProfile) -> some View {
-        HStack(alignment: .center, spacing: Spacing.md) {
-            NavigationLink {
-                DirectorProfileView(directorId: profile.id, container: container)
-            } label: {
-                HStack(alignment: .center, spacing: Spacing.md) {
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text(String(localized: "detail_director"))
-                            .font(.filmilaLabel)
-                            .foregroundStyle(FilmilaColors.textMuted)
-                            .kerning(0.8)
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(String(localized: "detail_director"))
+                .font(.filmilaLabel)
+                .foregroundStyle(FilmilaColors.textMuted)
+                .kerning(1.2)
+                .padding(.horizontal, Spacing.lg)
 
+            HStack(alignment: .center, spacing: Spacing.md) {
+                NavigationLink {
+                    DirectorProfileView(directorId: profile.id, container: container)
+                } label: {
+                    HStack(spacing: Spacing.md) {
                         DirectorAvatarView(
                             urlString: profile.resolvedAvatarURL,
                             initials: filmmakerInitials(profile),
                             size: directorAvatarSize
                         )
 
-                        Text(filmmakerDisplayName(profile))
-                            .font(.filmilaBodyMedium)
-                            .foregroundStyle(FilmilaColors.textPrimary)
-                            .lineLimit(2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(filmmakerDisplayName(profile))
+                                .font(.filmilaBodyMedium)
+                                .foregroundStyle(FilmilaColors.textPrimary)
+                                .lineLimit(2)
+
+                            Text(String(localized: "detail_director_subtitle"))
+                                .font(.filmilaCaption)
+                                .foregroundStyle(FilmilaColors.textSecondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Text(String(localized: "detail_view_profile"))
+                            .font(.filmilaCaptionMd)
+                            .foregroundStyle(FilmilaColors.accent)
                     }
-
-                    Spacer(minLength: Spacing.sm)
-
-                    Image(systemName: "chevron.right")
-                        .font(.filmilaCapsBadge)
-                        .foregroundStyle(FilmilaColors.textMuted)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(DirectorRowButtonStyle())
+                .accessibilityLabel(Text(filmmakerDisplayName(profile)))
+                .accessibilityHint(Text(String(localized: "detail_director_profile_hint")))
             }
-            .buttonStyle(DirectorRowButtonStyle())
-            .accessibilityLabel(Text(filmmakerDisplayName(profile)))
-            .accessibilityHint(Text(String(localized: "detail_director_profile_hint")))
+            .padding(Spacing.md)
+            .background(FilmilaColors.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+            )
+            .padding(.horizontal, Spacing.lg)
 
-            ShareLink(item: shareURL) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.filmilaIconDetail)
-                    .foregroundStyle(FilmilaColors.textPrimary)
-                    .frame(width: 44, height: 44)
-                    .background(FilmilaColors.surface)
-                    .clipShape(Circle())
+            HStack {
+                Spacer()
+                ShareLink(item: shareURL) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.filmilaIconDetail)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+                        .frame(width: 44, height: 44)
+                        .background(FilmilaColors.surfaceElevated)
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel(Text(String(localized: "detail_share_film")))
             }
-            .accessibilityLabel(Text(String(localized: "detail_share_film")))
+            .padding(.horizontal, Spacing.lg)
         }
-        .padding(.horizontal, Spacing.lg)
     }
 
     private func filmmakerDisplayName(_ profile: FilmmakerProfile) -> String {

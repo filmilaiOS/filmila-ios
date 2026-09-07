@@ -18,39 +18,42 @@ struct RegisterView: View {
                 )
                 .padding(Spacing.lg)
             } else {
-                ScrollView {
+                AuthScreenChrome(
+                    title: String(localized: "auth_register_title"),
+                    subtitle: String(localized: "auth_register_subtitle")
+                ) {
                     VStack(alignment: .leading, spacing: Spacing.md) {
-                        TextField(String(localized: "auth_full_name"), text: $viewModel.fullName)
-                            .textContentType(.name)
-                            .textInputAutocapitalization(.words)
-                            .padding()
-                            .background(FilmilaColors.surface)
-                            .cornerRadius(8)
-                            .disabled(viewModel.isLoading)
+                        AuthFormField(title: String(localized: "auth_full_name")) {
+                            TextField(String(localized: "auth_full_name"), text: $viewModel.fullName)
+                                .textContentType(.name)
+                                .textInputAutocapitalization(.words)
+                                .foregroundStyle(FilmilaColors.textPrimary)
+                                .disabled(viewModel.isLoading)
+                        }
 
-                        TextField(String(localized: "auth_email"), text: $viewModel.email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .padding()
-                            .background(FilmilaColors.surface)
-                            .cornerRadius(8)
-                            .disabled(viewModel.isLoading)
+                        AuthFormField(title: String(localized: "auth_email")) {
+                            TextField(String(localized: "auth_email"), text: $viewModel.email)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .foregroundStyle(FilmilaColors.textPrimary)
+                                .disabled(viewModel.isLoading)
+                        }
 
-                        SecureField(String(localized: "auth_password"), text: $viewModel.password)
-                            .textContentType(.newPassword)
-                            .padding()
-                            .background(FilmilaColors.surface)
-                            .cornerRadius(8)
-                            .disabled(viewModel.isLoading)
+                        AuthFormField(title: String(localized: "auth_password")) {
+                            SecureField(String(localized: "auth_password"), text: $viewModel.password)
+                                .textContentType(.newPassword)
+                                .foregroundStyle(FilmilaColors.textPrimary)
+                                .disabled(viewModel.isLoading)
+                        }
 
-                        SecureField(String(localized: "auth_confirm_password"), text: $viewModel.confirmPassword)
-                            .textContentType(.newPassword)
-                            .padding()
-                            .background(FilmilaColors.surface)
-                            .cornerRadius(8)
-                            .disabled(viewModel.isLoading)
+                        AuthFormField(title: String(localized: "auth_confirm_password")) {
+                            SecureField(String(localized: "auth_confirm_password"), text: $viewModel.confirmPassword)
+                                .textContentType(.newPassword)
+                                .foregroundStyle(FilmilaColors.textPrimary)
+                                .disabled(viewModel.isLoading)
+                        }
 
                         if let error = viewModel.errorMessage {
                             Text(error)
@@ -66,8 +69,8 @@ struct RegisterView: View {
                         }
                         .buttonStyle(FilmilaPrimaryButtonStyle())
                         .disabled(viewModel.isLoading)
+                        .padding(.top, Spacing.sm)
                     }
-                    .padding(Spacing.lg)
                 }
             }
 
@@ -77,8 +80,8 @@ struct RegisterView: View {
                     .tint(FilmilaColors.accent)
             }
         }
-        .navigationTitle(String(localized: "auth_register_title"))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 
@@ -88,6 +91,9 @@ struct CheckEmailNoticeView: View {
 
     var body: some View {
         VStack(spacing: Spacing.md) {
+            Image(systemName: "envelope.badge")
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(FilmilaColors.accent)
             Text(title)
                 .font(.filmilaTitleSm)
                 .foregroundStyle(FilmilaColors.textPrimary)

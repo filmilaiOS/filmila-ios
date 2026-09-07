@@ -14,43 +14,36 @@ extension Color {
 }
 
 struct FilmilaColors {
-    /// Launch screen and auth bootstrap splash.
-    static let splashBackground = Color(hex: "#0b0b10")
-    static let background = Color(hex: "#0b0b10")
-    static let surface = Color(hex: "#111118")
-    static let surfaceElevated = Color(hex: "#1A1A24")
-    static let surfaceBright = Color(hex: "#22222E")
-    /// Netflix-inspired accent.
-    static let accent = Color(hex: "#ff004b")
-    static let accentSubtle = Color(hex: "#ff004b").opacity(0.12)
-    static let accentBright = Color(hex: "#ff4f86")
+    /// Premium cinematic background.
+    static let splashBackground = Color(hex: "#07070F")
+    static let background = Color(hex: "#07070F")
+    static let surface = Color(hex: "#12121C")
+    static let surfaceElevated = Color(hex: "#1C1C26")
+    static let surfaceBright = Color(hex: "#262633")
+    /// Filmila brand accent.
+    static let accent = Color(hex: "#E91E8C")
+    static let accentSubtle = Color(hex: "#E91E8C").opacity(0.14)
+    static let accentBright = Color(hex: "#F04DA3")
     static let textPrimary = Color.white
-    static let textSecondary = Color(white: 0.60)
-    static let textMuted = Color(white: 0.36)
+    static let textSecondary = Color(white: 0.62)
+    static let textMuted = Color(white: 0.40)
     static let success = Color(hex: "#4ADE80")
     static let warning = Color(hex: "#FBBF24")
     static let destructive = Color(hex: "#F87171")
 
-    /// Full-screen player letterbox / chrome.
     static let playerChrome = Color.black
-    /// Scrim over artwork (e.g. continue-watching thumb).
-    static let overlayScrim = Color.black.opacity(0.45)
-    /// Offline / status banner backdrop.
-    static let networkBannerScrim = Color.black.opacity(0.8)
-    /// Hero carousel inactive page dot (outline style drawn in views).
+    static let overlayScrim = Color.black.opacity(0.50)
+    static let networkBannerScrim = Color.black.opacity(0.85)
     static let pageDotInactive = Color.white.opacity(0.35)
-    /// Hero “Watch” pill (light fill on dark hero).
-    static let heroWatchButtonFill = Color(hex: "#ff004b")
+    static let heroWatchButtonFill = Color(hex: "#E91E8C")
     static let heroWatchButtonForeground = Color.white
-    /// Poster duration / rating capsule backdrop.
-    static let posterBadgeBackdrop = Color.black.opacity(0.55)
-    /// Shimmer highlight band (low / mid for gradient).
+    static let posterBadgeBackdrop = Color.black.opacity(0.62)
     static let shimmerBandLow = Color.white.opacity(0.06)
-    static let shimmerBandMid = Color.white.opacity(0.22)
-    static let landingGradientBottom = Color(hex: "#0F051F")
-    /// Bottom fade over hero / poster imagery.
-    static let imageFadeScrimStrong = Color.black.opacity(0.75)
-    static let imageFadeScrimMedium = Color.black.opacity(0.7)
-    /// Subtle sweep on search poster placeholders.
-    static let searchPosterShimmerHighlight = Color.white.opacity(0.12)
+    static let shimmerBandMid = Color.white.opacity(0.20)
+    static let landingGradientBottom = Color(hex: "#0A0612")
+    static let imageFadeScrimStrong = Color.black.opacity(0.82)
+    static let imageFadeScrimMedium = Color.black.opacity(0.68)
+    static let searchPosterShimmerHighlight = Color.white.opacity(0.10)
+    static let cardBorder = Color.white.opacity(0.08)
+    static let tabBarBackground = Color(hex: "#0A0A12")
 }

@@ -3,6 +3,7 @@ import UIKit
 
 private enum SearchGenres {
     static let options: [(key: String, label: String)] = [
+        ("", String(localized: "search_filter_all")),
         ("Drama", String(localized: "genre_drama")),
         ("Comedy", String(localized: "genre_comedy")),
         ("Documentary", String(localized: "genre_documentary")),
@@ -18,9 +19,9 @@ private struct PosterShimmerPlaceholder: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
+        RoundedRectangle(cornerRadius: 14, style: .continuous)
             .fill(FilmilaColors.surfaceBright)
-            .frame(width: width, height: width * 1.5)
+            .frame(width: width, height: 72)
             .overlay {
                 GeometryReader { geo in
                     LinearGradient(
@@ -35,7 +36,7 @@ private struct PosterShimmerPlaceholder: View {
                     .frame(width: geo.size.width * 0.45)
                     .offset(x: phase * (geo.size.width + geo.size.width * 0.45))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .onAppear {
                 withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
@@ -50,7 +51,8 @@ struct SearchView: View {
     @Environment(\.container) private var container
     @Binding private var externalSearchQuery: String?
 
-    @State private var showsGenreFilters = false
+    @AppStorage("filmila.recentSearches") private var recentSearchesStorage = ""
+    @State private var popularFilms: [Film] = []
     @State private var comingSoonTitle: String?
 
     init(
@@ -61,11 +63,11 @@ struct SearchView: View {
         _externalSearchQuery = externalSearchQuery
     }
 
-    private var posterColumnWidth: CGFloat {
-        let screen = UIScreen.main.bounds.width
-        let pad = Spacing.lg * 2
-        let mid = Spacing.md
-        return max(120, (screen - pad - mid) / 2)
+    private var recentSearches: [String] {
+        recentSearchesStorage
+            .split(separator: "|")
+            .map(String.init)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
     private var trimmedQuery: String {
@@ -74,31 +76,27 @@ struct SearchView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
                 searchField
-
-                SearchFilterPillsRow(showsGenreFilters: $showsGenreFilters) { title in
-                    comingSoonTitle = title
-                }
-
-                if showsGenreFilters {
-                    genreChips
-                }
+                genreChips
 
                 if vm.isLoading {
-                    shimmerGrid
+                    loadingRows
                 } else if vm.results.isEmpty, trimmedQuery.count >= 2 {
                     noResultsState
-                } else if vm.results.isEmpty {
-                    defaultEmptyState
+                } else if !vm.results.isEmpty {
+                    resultsList
                 } else {
-                    resultsGrid
+                    browseContent
                 }
             }
             .padding(.bottom, Spacing.xxl)
         }
         .background(FilmilaColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
+        .task {
+            popularFilms = (try? await container.filmsRepo.fetchTrending()) ?? []
+        }
         .onChange(of: vm.query) { _ in
             vm.onSearchControlsChanged()
         }
@@ -110,6 +108,11 @@ struct SearchView: View {
             vm.query = value
             externalSearchQuery = nil
             vm.onSearchControlsChanged()
+        }
+        .onChange(of: vm.isLoading) { loading in
+            if !loading, !vm.results.isEmpty, trimmedQuery.count >= 2 {
+                rememberSearch(trimmedQuery)
+            }
         }
         .onDisappear {
             vm.cancelPendingSearch()
@@ -151,12 +154,12 @@ struct SearchView: View {
             }
         }
         .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm + 2)
-        .background(FilmilaColors.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.vertical, 14)
+        .background(FilmilaColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(FilmilaColors.surfaceBright.opacity(0.6), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(FilmilaColors.cardBorder, lineWidth: 1)
         )
         .padding(.horizontal, Spacing.lg)
         .padding(.top, Spacing.sm)
@@ -166,9 +169,11 @@ struct SearchView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
                 ForEach(SearchGenres.options, id: \.key) { item in
-                    let isSelected = vm.selectedGenre == item.key
+                    let isSelected = (vm.selectedGenre ?? "") == item.key
                     Button {
-                        if vm.selectedGenre == item.key {
+                        if isSelected, !item.key.isEmpty {
+                            vm.selectedGenre = nil
+                        } else if item.key.isEmpty {
                             vm.selectedGenre = nil
                         } else {
                             vm.selectedGenre = item.key
@@ -176,9 +181,9 @@ struct SearchView: View {
                     } label: {
                         Text(item.label)
                             .font(.filmilaCaptionMd)
-                            .foregroundStyle(isSelected ? FilmilaColors.background : FilmilaColors.textSecondary)
+                            .foregroundStyle(isSelected ? FilmilaColors.textInverse : FilmilaColors.textSecondary)
                             .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.sm)
+                            .padding(.vertical, 10)
                             .background(isSelected ? FilmilaColors.accent : FilmilaColors.surfaceElevated)
                             .clipShape(Capsule())
                     }
@@ -189,49 +194,104 @@ struct SearchView: View {
         }
     }
 
-    private var shimmerGrid: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.fixed(posterColumnWidth), spacing: Spacing.md),
-                GridItem(.fixed(posterColumnWidth), spacing: Spacing.md)
-            ],
-            spacing: Spacing.md
-        ) {
-            ForEach(0 ..< 6, id: \.self) { _ in
-                PosterShimmerPlaceholder(width: posterColumnWidth)
+    @ViewBuilder
+    private var browseContent: some View {
+        if !recentSearches.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                FilmilaSectionHeader(
+                    title: String(localized: "search_recent_searches"),
+                    trailingTitle: String(localized: "search_clear_all"),
+                    trailingAction: clearRecentSearches
+                )
+
+                FlowLayout(spacing: Spacing.sm) {
+                    ForEach(recentSearches, id: \.self) { term in
+                        recentSearchChip(term)
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+            }
+        }
+
+        if !popularFilms.isEmpty {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                FilmilaSectionHeader(
+                    title: String(localized: "search_popular_searches"),
+                    systemImage: "sparkles",
+                    accentTitle: false
+                )
+
+                VStack(spacing: Spacing.sm) {
+                    ForEach(popularFilms.prefix(6)) { film in
+                        NavigationLink {
+                            FilmDetailView(filmId: film.id, container: container)
+                        } label: {
+                            SearchResultRowCard(film: film)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Spacing.lg)
+            }
+        } else {
+            Text(String(localized: "search_empty_browse_hint"))
+                .font(.filmilaBody)
+                .foregroundStyle(FilmilaColors.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, Spacing.xl)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Spacing.lg)
+        }
+    }
+
+    private func recentSearchChip(_ term: String) -> some View {
+        HStack(spacing: 6) {
+            Button {
+                vm.query = term
+                vm.onSearchControlsChanged()
+            } label: {
+                Text(term)
+                    .font(.filmilaCaptionMd)
+                    .foregroundStyle(FilmilaColors.textPrimary)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                removeRecentSearch(term)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(FilmilaColors.textMuted)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(FilmilaColors.surfaceElevated)
+        .clipShape(Capsule())
+    }
+
+    private var loadingRows: some View {
+        VStack(spacing: Spacing.sm) {
+            ForEach(0 ..< 4, id: \.self) { _ in
+                PosterShimmerPlaceholder(width: UIScreen.main.bounds.width - Spacing.lg * 2)
             }
         }
         .padding(.horizontal, Spacing.lg)
     }
 
-    private var resultsGrid: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.fixed(posterColumnWidth), spacing: Spacing.md),
-                GridItem(.fixed(posterColumnWidth), spacing: Spacing.md)
-            ],
-            spacing: Spacing.md
-        ) {
+    private var resultsList: some View {
+        VStack(spacing: Spacing.sm) {
             ForEach(vm.results) { film in
                 NavigationLink {
                     FilmDetailView(filmId: film.id, container: container)
                 } label: {
-                    FilmPosterCard(film: film, width: posterColumnWidth)
+                    SearchResultRowCard(film: film)
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, Spacing.lg)
-    }
-
-    private var defaultEmptyState: some View {
-        Text(String(localized: "search_empty_browse_hint"))
-            .font(.filmilaBody)
-            .foregroundStyle(FilmilaColors.textSecondary)
-            .frame(maxWidth: .infinity)
-            .padding(.top, Spacing.xxl)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, Spacing.lg)
     }
 
     private var noResultsState: some View {
@@ -242,6 +302,64 @@ struct SearchView: View {
             .padding(.top, Spacing.xxl)
             .multilineTextAlignment(.center)
             .padding(.horizontal, Spacing.lg)
+    }
+
+    private func rememberSearch(_ term: String) {
+        var items = recentSearches.filter { $0.caseInsensitiveCompare(term) != .orderedSame }
+        items.insert(term, at: 0)
+        recentSearchesStorage = items.prefix(8).joined(separator: "|")
+    }
+
+    private func removeRecentSearch(_ term: String) {
+        let items = recentSearches.filter { $0 != term }
+        recentSearchesStorage = items.joined(separator: "|")
+    }
+
+    private func clearRecentSearches() {
+        recentSearchesStorage = ""
+    }
+}
+
+/// Simple wrapping layout for recent-search chips.
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > width, x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+
+        return CGSize(width: width, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX, x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
     }
 }
 

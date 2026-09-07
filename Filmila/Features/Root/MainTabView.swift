@@ -10,11 +10,11 @@ private struct PresentedOrder: Identifiable {
     var id: String { orderId }
 }
 
-private enum MenuTabTag {
+private enum MainTabTag {
     static let home = 0
     static let search = 1
-    static let myList = 2
-    static let menu = 3
+    static let watchlist = 2
+    static let profile = 3
 }
 
 struct MainTabView: View {
@@ -23,12 +23,10 @@ struct MainTabView: View {
     @EnvironmentObject private var deepLinkHandler: DeepLinkHandler
     @EnvironmentObject private var networkMonitor: NetworkMonitor
 
-    @State private var selectedTab = MenuTabTag.home
-    @State private var lastNonMenuTab = MenuTabTag.home
+    @State private var selectedTab = MainTabTag.home
     @State private var isDrawerOpen = false
     @State private var authSheet: AuthSheetDestination?
     @State private var homeBrowseTab: HomeBrowseTab = .films
-    @State private var showProfile = false
     @State private var showCommunity = false
     @State private var comingSoonTitle: String?
     @State private var presentedFilm: PresentedFilm?
@@ -39,7 +37,8 @@ struct MainTabView: View {
         self.container = container
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(FilmilaColors.surface)
+        appearance.backgroundColor = UIColor(FilmilaColors.tabBarBackground)
+        appearance.shadowColor = UIColor.white.withAlphaComponent(0.08)
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().unselectedItemTintColor = UIColor(FilmilaColors.textMuted)
@@ -75,9 +74,9 @@ struct MainTabView: View {
                 }
             }
             .tabItem {
-                Label(String(localized: "tab_home"), systemImage: "house.fill")
+                Label(String(localized: "tab_home"), systemImage: "film.stack")
             }
-            .tag(MenuTabTag.home)
+            .tag(MainTabTag.home)
 
             NavigationStack {
                 AppShellView(isDrawerOpen: $isDrawerOpen) {
@@ -93,7 +92,7 @@ struct MainTabView: View {
             .tabItem {
                 Label(String(localized: "tab_search"), systemImage: "magnifyingglass")
             }
-            .tag(MenuTabTag.search)
+            .tag(MainTabTag.search)
 
             NavigationStack {
                 AppShellView(isDrawerOpen: $isDrawerOpen) {
@@ -105,19 +104,22 @@ struct MainTabView: View {
                 }
             }
             .tabItem {
-                Label(String(localized: "tab_my_list"), systemImage: "rectangle.stack.fill")
+                Label(String(localized: "tab_watchlist"), systemImage: "bookmark")
             }
-            .tag(MenuTabTag.myList)
+            .tag(MainTabTag.watchlist)
 
             NavigationStack {
-                AppShellView(showsHeader: true, isDrawerOpen: $isDrawerOpen) {
-                    MenuTabView()
+                AppShellView(isDrawerOpen: $isDrawerOpen) {
+                    ProfileTabContent(
+                        onLogIn: { authSheet = .login },
+                        onCreateAccount: { authSheet = .register }
+                    )
                 }
             }
             .tabItem {
-                Label(String(localized: "tab_menu"), systemImage: "line.3.horizontal")
+                Label(String(localized: "tab_profile"), systemImage: "person")
             }
-            .tag(MenuTabTag.menu)
+            .tag(MainTabTag.profile)
         }
         .tint(FilmilaColors.accent)
         .environment(\.mainTabSelection, $selectedTab)
@@ -127,25 +129,14 @@ struct MainTabView: View {
             if userId != nil {
                 authSheet = nil
             } else {
-                showProfile = false
-                selectedTab = MenuTabTag.home
-            }
-        }
-        .onChange(of: selectedTab) { newValue in
-            if newValue == MenuTabTag.menu {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    isDrawerOpen = true
-                }
-                selectedTab = lastNonMenuTab
-            } else {
-                lastNonMenuTab = newValue
+                selectedTab = MainTabTag.home
             }
         }
         .onChange(of: deepLinkHandler.pendingRoute) { route in
             guard let route else { return }
             switch route {
             case let .filmDetail(filmId):
-                selectedTab = MenuTabTag.home
+                selectedTab = MainTabTag.home
                 presentedFilm = PresentedFilm(id: filmId)
                 deepLinkHandler.pendingRoute = nil
             case .paymentComplete:
@@ -156,10 +147,10 @@ struct MainTabView: View {
                 paymentOrder = PresentedOrder(orderId: orderId)
                 deepLinkHandler.pendingRoute = nil
             case .profile:
-                showProfile = true
+                selectedTab = MainTabTag.profile
                 deepLinkHandler.pendingRoute = nil
             case let .search(query):
-                selectedTab = MenuTabTag.search
+                selectedTab = MainTabTag.search
                 externalSearchQuery = query ?? ""
                 deepLinkHandler.pendingRoute = nil
             }
@@ -192,20 +183,6 @@ struct MainTabView: View {
             }
             .presentationDetents([.large])
         }
-        .sheet(isPresented: $showProfile) {
-            NavigationStack {
-                ProfileView()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(String(localized: "detail_iap_close")) {
-                                showProfile = false
-                            }
-                            .foregroundStyle(FilmilaColors.textSecondary)
-                        }
-                    }
-            }
-            .environmentObject(auth)
-        }
         .sheet(isPresented: $showCommunity) {
             NavigationStack {
                 CommunityFeedView(container: container)
@@ -213,7 +190,7 @@ struct MainTabView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 showCommunity = false
-                                selectedTab = MenuTabTag.home
+                                selectedTab = MainTabTag.home
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: "chevron.backward")
@@ -266,20 +243,20 @@ struct MainTabView: View {
         switch destination {
         case .films:
             homeBrowseTab = .films
-            selectedTab = MenuTabTag.home
+            selectedTab = MainTabTag.home
         case .collections:
             homeBrowseTab = .collections
-            selectedTab = MenuTabTag.home
+            selectedTab = MainTabTag.home
         case .genres:
             homeBrowseTab = .genres
-            selectedTab = MenuTabTag.home
+            selectedTab = MainTabTag.home
         case .moods:
             homeBrowseTab = .moods
-            selectedTab = MenuTabTag.home
+            selectedTab = MainTabTag.home
         case .themes:
             comingSoonTitle = String(localized: "shell_browse_themes")
         case .myList:
-            selectedTab = MenuTabTag.myList
+            selectedTab = MainTabTag.watchlist
         case .community:
             showCommunity = true
         case .submitFilm:
@@ -293,8 +270,64 @@ struct MainTabView: View {
         case .help:
             comingSoonTitle = String(localized: "shell_help_center")
         case .profile:
-            showProfile = true
+            selectedTab = MainTabTag.profile
         }
+    }
+}
+
+private struct ProfileTabContent: View {
+    @EnvironmentObject private var auth: AuthService
+
+    var onLogIn: () -> Void
+    var onCreateAccount: () -> Void
+
+    var body: some View {
+        Group {
+            if auth.session == nil {
+                ProfileLoggedOutView(onLogIn: onLogIn, onCreateAccount: onCreateAccount)
+            } else {
+                ProfileView()
+            }
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+}
+
+private struct ProfileLoggedOutView: View {
+    var onLogIn: () -> Void
+    var onCreateAccount: () -> Void
+
+    var body: some View {
+        VStack(spacing: Spacing.lg) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "person.crop.circle")
+                .font(.system(size: 64, weight: .light))
+                .foregroundStyle(FilmilaColors.accent)
+
+            Text(String(localized: "profile_logged_out_title"))
+                .font(.filmilaTitle)
+                .foregroundStyle(FilmilaColors.textPrimary)
+                .multilineTextAlignment(.center)
+
+            Text(String(localized: "profile_logged_out_body"))
+                .font(.filmilaBody)
+                .foregroundStyle(FilmilaColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Spacing.xl)
+
+            Button(String(localized: "auth_sign_in"), action: onLogIn)
+                .buttonStyle(FilmilaPrimaryButtonStyle())
+                .padding(.horizontal, Spacing.lg)
+
+            Button(String(localized: "auth_create_account"), action: onCreateAccount)
+                .buttonStyle(FilmilaSecondaryButtonStyle())
+                .padding(.horizontal, Spacing.lg)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(FilmilaColors.background.ignoresSafeArea())
     }
 }
 

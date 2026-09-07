@@ -1,16 +1,16 @@
 import SwiftUI
 
 extension Font {
-    static let filmilaDisplay = Font.custom("Georgia-Bold", size: 32)
-    static let filmilaDisplayMd = Font.custom("Georgia-Bold", size: 24)
-    static let filmilaTitle = Font.custom("Georgia-BoldItalic", size: 20)
-    static let filmilaTitleSm = Font.custom("Georgia", size: 17)
-    static let filmilaBody = Font.system(size: 15, weight: .regular)
-    static let filmilaBodyMedium = Font.system(size: 15, weight: .medium)
-    static let filmilaCaption = Font.system(size: 12, weight: .regular)
-    static let filmilaCaptionMd = Font.system(size: 12, weight: .medium)
-    static let filmilaLabel = Font.system(size: 11, weight: .medium)
-    static let filmilaPrice = Font.system(size: 17, weight: .semibold, design: .monospaced)
+    static let filmilaDisplay = Font.system(size: 32, weight: .bold, design: .default)
+    static let filmilaDisplayMd = Font.system(size: 26, weight: .bold, design: .default)
+    static let filmilaTitle = Font.system(size: 20, weight: .semibold, design: .default)
+    static let filmilaTitleSm = Font.system(size: 17, weight: .semibold, design: .default)
+    static let filmilaBody = Font.system(size: 15, weight: .regular, design: .default)
+    static let filmilaBodyMedium = Font.system(size: 15, weight: .medium, design: .default)
+    static let filmilaCaption = Font.system(size: 13, weight: .regular, design: .default)
+    static let filmilaCaptionMd = Font.system(size: 13, weight: .medium, design: .default)
+    static let filmilaLabel = Font.system(size: 11, weight: .semibold, design: .default)
+    static let filmilaPrice = Font.system(size: 15, weight: .semibold, design: .rounded)
 
     static let filmilaIconEmptyState = Font.system(size: 44, weight: .regular)
     static let filmilaIconNotification = Font.system(size: 22, weight: .regular)
@@ -20,5 +20,5 @@ extension Font {
     static let filmilaIconRating = Font.system(size: 18, weight: .medium)
     static let filmilaIconPlaceholder = Font.system(size: 28, weight: .medium)
     static let filmilaAvatarInitial = Font.system(size: 28, weight: .semibold, design: .rounded)
-    static let filmilaCapsBadge = Font.system(size: 12, weight: .semibold)
+    static let filmilaCapsBadge = Font.system(size: 11, weight: .semibold)
 }

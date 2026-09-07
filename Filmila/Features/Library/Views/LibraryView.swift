@@ -24,7 +24,7 @@ struct LibraryView: View {
 
     private var posterColumnWidth: CGFloat {
         let screen = UIScreen.main.bounds.width
-        let pad = Spacing.lg
+        let pad = Spacing.lg * 2
         let mid = Spacing.md
         return max(150, (screen - pad - mid) / 2)
     }
@@ -40,6 +40,7 @@ struct LibraryView: View {
                 )
             } else {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
+                    watchlistHeader
                     librarySegmentedControl
                     tabContent
                 }
@@ -57,6 +58,29 @@ struct LibraryView: View {
         }
     }
 
+    private var watchlistHeader: some View {
+        HStack(alignment: .top, spacing: Spacing.md) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "bookmark.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(FilmilaColors.accent)
+                    Text(String(localized: "library_watchlist_title"))
+                        .font(.filmilaDisplayMd)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+                }
+
+                Text(String(localized: "library_watchlist_subtitle"))
+                    .font(.filmilaCaption)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.top, Spacing.sm)
+    }
+
     private var librarySegmentedControl: some View {
         HStack(spacing: 6) {
             ForEach(LibraryTab.allCases) { tab in
@@ -68,7 +92,7 @@ struct LibraryView: View {
         .clipShape(Capsule())
         .overlay(
             Capsule(style: .continuous)
-                .stroke(FilmilaColors.surfaceBright.opacity(0.55), lineWidth: 1)
+                .stroke(FilmilaColors.cardBorder, lineWidth: 1)
         )
         .padding(.horizontal, Spacing.lg)
     }
@@ -95,10 +119,10 @@ struct LibraryView: View {
                     .padding(.vertical, 3)
                     .background(
                         Capsule(style: .continuous)
-                        .fill(isSelected ? FilmilaColors.accentSubtle : FilmilaColors.surfaceBright)
+                            .fill(isSelected ? FilmilaColors.accentSubtle : FilmilaColors.surfaceBright)
                     )
             }
-            .foregroundStyle(isSelected ? FilmilaColors.background : FilmilaColors.textSecondary)
+            .foregroundStyle(isSelected ? FilmilaColors.textInverse : FilmilaColors.textSecondary)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
             .padding(.horizontal, 4)
@@ -140,11 +164,11 @@ struct LibraryView: View {
     private var tabContent: some View {
         switch vm.selectedTab {
         case .watchlist:
-            libraryGrid(films: vm.watchlist, emptyState: .watchlist)
+            libraryGrid(films: vm.watchlist, emptyState: .watchlist, allowsRemove: true)
         case .favorites:
-            libraryGrid(films: vm.favorites, emptyState: .favorites)
+            libraryGrid(films: vm.favorites, emptyState: .favorites, allowsRemove: false)
         case .purchases:
-            libraryGrid(films: vm.purchasedFilms, emptyState: .purchases)
+            libraryGrid(films: vm.purchasedFilms, emptyState: .purchases, allowsRemove: false)
         }
     }
 
@@ -155,7 +179,7 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private func libraryGrid(films: [Film], emptyState: LibraryEmptyKind) -> some View {
+    private func libraryGrid(films: [Film], emptyState: LibraryEmptyKind, allowsRemove: Bool) -> some View {
         Group {
             if vm.isLoading {
                 ProgressView()
@@ -170,22 +194,17 @@ struct LibraryView: View {
                         GridItem(.fixed(posterColumnWidth), spacing: Spacing.md),
                         GridItem(.fixed(posterColumnWidth), spacing: Spacing.md)
                     ],
-                    spacing: Spacing.md
+                    spacing: Spacing.lg
                 ) {
                     ForEach(films) { film in
                         NavigationLink {
                             FilmDetailView(filmId: film.id, container: container)
                         } label: {
-                            FilmPosterCard(
+                            WatchlistGridCard(
                                 film: film,
+                                averageRating: film.averageRating,
                                 width: posterColumnWidth,
-                                averageRating: film.averageRating
-                            )
-                            .shadow(
-                                color: .black.opacity(0.28),
-                                radius: 10,
-                                x: 0,
-                                y: 6
+                                onRemove: allowsRemove ? { removeFromWatchlist(film) } : nil
                             )
                         }
                         .buttonStyle(.plain)
@@ -193,6 +212,13 @@ struct LibraryView: View {
                 }
                 .padding(.horizontal, Spacing.lg)
             }
+        }
+    }
+
+    private func removeFromWatchlist(_ film: Film) {
+        Task {
+            try? await container.filmsRepo.toggleWatchlist(filmId: film.id, add: false)
+            await vm.load()
         }
     }
 
@@ -279,6 +305,7 @@ private struct LibraryEmptyState: View {
         LibraryView(container: PreviewContainer())
     }
     .environment(\.container, PreviewContainer())
+    .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
     .environment(\.mainTabSelection, .constant(2))
     .preferredColorScheme(.dark)
 }

@@ -8,11 +8,10 @@ struct RecentReleasesRow: View {
     var body: some View {
         if !films.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text(String(localized: "home_recent_releases"))
-                    .font(.filmilaLabel)
-                    .foregroundStyle(FilmilaColors.textPrimary)
-                    .tracking(2.2)
-                    .padding(.horizontal, Spacing.lg)
+                FilmilaSectionHeader(
+                    title: String(localized: "home_recent_releases"),
+                    systemImage: "film.fill"
+                )
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: Spacing.md) {
@@ -52,7 +51,7 @@ struct FilmPosterCardWithGenreOverlay: View {
                     .foregroundStyle(FilmilaColors.textPrimary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(FilmilaColors.overlayScrim)
+                    .background(FilmilaColors.posterBadgeBackdrop)
                     .clipShape(Capsule())
                     .padding(8)
             }

@@ -11,84 +11,64 @@ struct FeaturedHeroSection: View {
     @State private var isInWatchlist = false
     @State private var isTogglingWatchlist = false
 
-    private var genreTag: String {
-        (film.genre ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var durationTag: String? {
-        film.formattedDurationForListing
-    }
-
-    private var metaLine: String {
-        [genreTag, durationTag].compactMap { value in
-            let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            return trimmed.isEmpty ? nil : trimmed
-        }.joined(separator: " · ")
+    private var heroHeight: CGFloat {
+        UIScreen.main.bounds.height * 0.52
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .bottomLeading) {
                 CachedAsyncImage(url: film.thumbnailUrl)
-                    .frame(height: UIScreen.main.bounds.height * 0.48)
-                    .frame(maxWidth: .infinity)
-                    .clipped()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 LinearGradient(
                     stops: [
                         .init(color: .clear, location: 0),
-                        .init(color: .clear, location: 0.35),
-                        .init(color: FilmilaColors.background.opacity(0.95), location: 1)
+                        .init(color: Color.black.opacity(0.15), location: 0.45),
+                        .init(color: FilmilaColors.background.opacity(0.92), location: 1)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(String(localized: "home_editors_pick_label"))
-                        .font(.filmilaLabel)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                        .tracking(2.2)
-
                     Text(film.displayTitle)
                         .font(.filmilaDisplayMd)
                         .foregroundStyle(FilmilaColors.textPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
 
-                    if !metaLine.isEmpty {
-                        Text(metaLine.uppercased())
-                            .font(.filmilaCaptionMd)
-                            .foregroundStyle(FilmilaColors.textSecondary)
-                            .lineLimit(1)
-                    }
+                    metadataRow
 
                     if let description = film.displayDescription?.trimmingCharacters(in: .whitespacesAndNewlines),
                        !description.isEmpty {
                         Text(description)
                             .font(.filmilaBody)
                             .foregroundStyle(FilmilaColors.textSecondary)
-                            .lineLimit(3)
+                            .lineLimit(2)
                             .multilineTextAlignment(.leading)
-                            .padding(.top, Spacing.xs)
+                            .padding(.top, 2)
                     }
 
                     HStack(spacing: Spacing.sm) {
                         NavigationLink {
                             FilmDetailView(filmId: film.id, container: container)
                         } label: {
-                            Text(String(localized: "home_watch"))
+                            Label(String(localized: "home_watch_now"), systemImage: "play.fill")
                                 .font(.filmilaBodyMedium)
                         }
-                        .buttonStyle(FilmilaWhiteButtonStyle())
+                        .buttonStyle(FilmilaAccentButtonStyle())
 
                         Button {
                             Task { await toggleWatchlist() }
                         } label: {
-                            Text(watchlistButtonTitle)
-                                .font(.filmilaBodyMedium)
+                            Label(
+                                watchlistButtonTitle,
+                                systemImage: isInWatchlist ? "checkmark" : "plus"
+                            )
+                            .font(.filmilaBodyMedium)
                         }
-                        .buttonStyle(FilmilaWhiteOutlineButtonStyle())
+                        .buttonStyle(FilmilaAccentOutlineButtonStyle())
                         .disabled(isTogglingWatchlist)
                     }
                     .padding(.top, Spacing.sm)
@@ -96,9 +76,49 @@ struct FeaturedHeroSection: View {
                 .padding(.horizontal, Spacing.lg)
                 .padding(.bottom, Spacing.lg)
             }
+            .frame(height: heroHeight)
+            .frame(maxWidth: .infinity)
+            .clipped()
         }
         .task(id: auth.session?.user.id) {
             await refreshWatchlistState()
+        }
+    }
+
+    private var metadataRow: some View {
+        HStack(spacing: Spacing.sm) {
+            if let averageRating, averageRating > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FilmilaColors.accent)
+                    Text(Film.formattedAverageRating(averageRating))
+                        .font(.filmilaCaptionMd)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+                }
+            }
+
+            if let duration = film.formattedDurationForListing {
+                HStack(spacing: 4) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 11, weight: .medium))
+                    Text(duration)
+                        .font(.filmilaCaptionMd)
+                }
+                .foregroundStyle(FilmilaColors.textSecondary)
+            }
+
+            if let genre = film.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+                Text(genre)
+                    .font(.filmilaCapsBadge)
+                    .foregroundStyle(FilmilaColors.textPrimary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(FilmilaColors.surfaceElevated.opacity(0.85))
+                    .clipShape(Capsule())
+            }
+
+            FilmPricePill(film: film, compact: true)
         }
     }
 
@@ -129,7 +149,7 @@ struct FeaturedHeroSection: View {
             try await container.filmsRepo.toggleWatchlist(filmId: film.id, add: !isInWatchlist)
             isInWatchlist.toggle()
         } catch {
-            // Same silent failure pattern as detail — user can retry from detail screen.
+            // User can retry from detail screen.
         }
     }
 }
@@ -140,23 +160,22 @@ struct FeaturedHeroSection: View {
         FeaturedHeroSection(
             film: Film(
                 id: 1,
-                title: "Night Train",
-                description: "A journey through the desert night.",
+                title: "Nour of Riyadh",
+                description: "On a glittering evening in Boulevard Riyadh, a young calligrapher stumbles...",
                 thumbnailUrl: "https://picsum.photos/800/1200",
-                price: 0,
+                price: 18,
                 status: .approved,
-                genre: "Thriller",
-                duration: 5400,
+                genre: "Drama",
+                duration: 1080,
                 viewCount: 120,
                 createdAt: Date()
             ),
-            averageRating: 4.2,
+            averageRating: 4.9,
             onWatchlistAuthRequired: {}
         )
     }
     .environment(\.container, PreviewContainer())
     .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
-    .environment(\.shellNavigation, ShellNavigationActions())
     .background(FilmilaColors.background)
     .preferredColorScheme(.dark)
 }
