@@ -121,6 +121,10 @@
 "library_tab_watchlist" = "Watchlist";
 "library_watchlist_title" = "My Watchlist";
 "library_watchlist_subtitle" = "Short films saved for later viewing.";
+"library_favorites_title" = "My Favorites";
+"library_favorites_subtitle" = "Short films you've marked as favorites.";
+"library_purchases_title" = "My Purchases";
+"library_purchases_subtitle" = "Films you've bought, ready to watch anytime.";
 "mylist_logged_out_title" = "Your list starts here";
 "mylist_logged_out_subtitle" = "Save films to watch later and pick up where you left off.";
 "mylist_recommended_heading" = "FILMS WE'D START WITH";
@@ -187,6 +191,7 @@
 "tab_my_list" = "My List";
 "tab_menu" = "Menu";
 "tab_profile" = "Profile";
+"tab_search" = "Search";
 "tab_watchlist" = "Watchlist";
 "shell_browse_heading" = "Browse";
 "shell_browse_films" = "Films";

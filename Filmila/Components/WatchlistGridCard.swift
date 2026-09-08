@@ -41,7 +41,7 @@ struct WatchlistGridCard: View {
                 .lineLimit(1)
 
             HStack(spacing: 6) {
-                if let filmmaker = film.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !filmmaker.isEmpty {
+                if let filmmaker = publicFilmmakerName {
                     Text(filmmaker)
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textSecondary)
@@ -81,6 +81,17 @@ struct WatchlistGridCard: View {
             }
         }
         .frame(width: width, alignment: .topLeading)
+    }
+
+    /// Catalog `filmmaker` is often an email. Show a name only; omit the line otherwise.
+    private var publicFilmmakerName: String? {
+        guard let raw = film.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return nil
+        }
+        if raw.contains("@") {
+            return nil
+        }
+        return raw
     }
 }
 

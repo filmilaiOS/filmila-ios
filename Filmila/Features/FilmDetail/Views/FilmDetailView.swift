@@ -269,9 +269,11 @@ struct FilmDetailView: View {
                         isInteractive: false
                     )
 
-                    Text(String(format: String(localized: "detail_rating_total_format"), vm.ratingCount))
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
+                    if vm.ratingCount > 0 {
+                        Text(String(format: String(localized: "detail_rating_total_format"), vm.ratingCount))
+                            .font(.filmilaCaption)
+                            .foregroundStyle(FilmilaColors.textSecondary)
+                    }
                 }
 
                 Spacer(minLength: 0)

@@ -121,6 +121,10 @@
 "library_tab_watchlist" = "قائمة المشاهدة";
 "library_watchlist_title" = "قائمة المشاهدة";
 "library_watchlist_subtitle" = "أفلام قصيرة محفوظة للمشاهدة لاحقًا.";
+"library_favorites_title" = "المفضلة";
+"library_favorites_subtitle" = "أفلام قصيرة أضفتها إلى المفضلة.";
+"library_purchases_title" = "مشترياتي";
+"library_purchases_subtitle" = "أفلام اشتريتها وجاهزة للمشاهدة في أي وقت.";
 "mylist_logged_out_title" = "قائمتك تبدأ من هنا";
 "mylist_logged_out_subtitle" = "احفظ الأفلام لمشاهدتها لاحقًا وتابع من حيث توقفت.";
 "mylist_recommended_heading" = "أفلام نبدأ بها";
@@ -187,6 +191,7 @@
 "tab_my_list" = "قائمتي";
 "tab_menu" = "القائمة";
 "tab_profile" = "حسابي";
+"tab_search" = "بحث";
 "tab_watchlist" = "قائمة المشاهدة";
 "shell_browse_heading" = "تصفح";
 "shell_browse_films" = "أفلام";

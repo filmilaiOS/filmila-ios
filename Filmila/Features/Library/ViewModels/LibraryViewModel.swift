@@ -34,9 +34,11 @@ final class LibraryViewModel: ObservableObject {
             let (w, f, payments) = try await (wl, fav, pay)
             watchlist = w
             favorites = f
-            purchaseHistory = payments
+            // Match AccessChecker: only `film_payments.status == completed` counts as a purchase.
+            let completedPayments = payments.filter { $0.status == .completed }
+            purchaseHistory = completedPayments
 
-            let orderedUniqueFilmIds = payments.map(\.filmId).reduce(into: [Int]()) { acc, id in
+            let orderedUniqueFilmIds = completedPayments.map(\.filmId).reduce(into: [Int]()) { acc, id in
                 if !acc.contains(id) {
                     acc.append(id)
                 }

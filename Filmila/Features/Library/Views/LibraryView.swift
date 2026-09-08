@@ -31,22 +31,25 @@ struct LibraryView: View {
 
     var body: some View {
         ScrollView {
-            if auth.session == nil {
-                MyListLoggedOutView(
-                    recommendedFilms: homeVM.recentlyAdded,
-                    averageRatingByFilmId: homeVM.averageRatingByFilmId,
-                    onCreateAccount: onCreateAccount,
-                    onLogIn: onLogIn
-                )
-            } else {
-                VStack(alignment: .leading, spacing: Spacing.lg) {
-                    watchlistHeader
-                    librarySegmentedControl
-                    tabContent
+            Group {
+                if auth.session == nil {
+                    MyListLoggedOutView(
+                        recommendedFilms: homeVM.recentlyAdded,
+                        averageRatingByFilmId: homeVM.averageRatingByFilmId,
+                        onCreateAccount: onCreateAccount,
+                        onLogIn: onLogIn
+                    )
+                } else {
+                    VStack(alignment: .leading, spacing: Spacing.lg) {
+                        watchlistHeader
+                        librarySegmentedControl
+                        tabContent
+                    }
                 }
             }
+            .padding(.bottom, Spacing.xxl)
         }
-        .padding(.bottom, Spacing.xxl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(FilmilaColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task(id: auth.session?.user.id) {
@@ -65,12 +68,12 @@ struct LibraryView: View {
                     Image(systemName: "bookmark.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(FilmilaColors.accent)
-                    Text(String(localized: "library_watchlist_title"))
+                    Text(headerTitle)
                         .font(.filmilaDisplayMd)
                         .foregroundStyle(FilmilaColors.textPrimary)
                 }
 
-                Text(String(localized: "library_watchlist_subtitle"))
+                Text(headerSubtitle)
                     .font(.filmilaCaption)
                     .foregroundStyle(FilmilaColors.textSecondary)
             }
@@ -79,6 +82,28 @@ struct LibraryView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.top, Spacing.sm)
+    }
+
+    private var headerTitle: String {
+        switch vm.selectedTab {
+        case .watchlist:
+            String(localized: "library_watchlist_title")
+        case .favorites:
+            String(localized: "library_favorites_title")
+        case .purchases:
+            String(localized: "library_purchases_title")
+        }
+    }
+
+    private var headerSubtitle: String {
+        switch vm.selectedTab {
+        case .watchlist:
+            String(localized: "library_watchlist_subtitle")
+        case .favorites:
+            String(localized: "library_favorites_subtitle")
+        case .purchases:
+            String(localized: "library_purchases_subtitle")
+        }
     }
 
     private var librarySegmentedControl: some View {

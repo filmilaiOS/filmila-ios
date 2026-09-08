@@ -12,7 +12,8 @@ struct CommentCell: View {
     private var initials: String {
         let name = comment.authorDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if name.isEmpty {
-            return String(comment.userId.uuidString.prefix(2)).uppercased()
+            let fallback = String(localized: "detail_comment_anonymous")
+            return String(fallback.prefix(1)).uppercased()
         }
         let parts = name.split(separator: " ")
         if parts.count >= 2 {

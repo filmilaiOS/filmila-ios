@@ -37,6 +37,7 @@ struct HomeView: View {
                     .padding(Spacing.lg)
                 }
             }
+            .padding(.bottom, Spacing.xxl)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(FilmilaColors.background.ignoresSafeArea())

@@ -92,6 +92,7 @@ struct SearchView: View {
             }
             .padding(.bottom, Spacing.xxl)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(FilmilaColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task {

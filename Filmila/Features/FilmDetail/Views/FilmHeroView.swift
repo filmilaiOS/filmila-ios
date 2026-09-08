@@ -82,9 +82,7 @@ struct FilmHeroView: View {
                             Capsule(style: .continuous)
                                 .fill(FilmilaColors.posterBadgeBackdrop)
                         )
-                        .accessibilityLabel(
-                            Text(String(format: String(localized: "detail_rating_average_format"), averageRating, ratingCount))
-                        )
+                        .accessibilityLabel(heroRatingAccessibilityLabel)
                     }
                 }
             }
@@ -161,6 +159,13 @@ struct FilmHeroView: View {
             }
             .padding(.horizontal, Spacing.lg)
         }
+    }
+
+    private var heroRatingAccessibilityLabel: Text {
+        if ratingCount > 0 {
+            return Text(String(format: String(localized: "detail_rating_average_format"), averageRating, ratingCount))
+        }
+        return Text(Film.formattedAverageRating(averageRating))
     }
 
     private func filmmakerDisplayName(_ profile: FilmmakerProfile) -> String {
