@@ -24,11 +24,11 @@ enum IAPServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .productUnavailable:
-            return String(localized: "iap_product_unavailable")
+            return String(localized: "player_error_unavailable")
         case let .purchaseFailed(message):
             return message
         case .notSignedIn:
-            return String(localized: "iap_not_signed_in")
+            return String(localized: "player_error_sign_in")
         }
     }
 }
@@ -70,7 +70,7 @@ final class IAPService: IAPServiceProtocol {
         case .pending:
             return .pending
         @unknown default:
-            return .failed(IAPServiceError.purchaseFailed(String(localized: "iap_unknown")))
+            return .failed(IAPServiceError.purchaseFailed(String(localized: "player_error_unavailable")))
         }
     }
 

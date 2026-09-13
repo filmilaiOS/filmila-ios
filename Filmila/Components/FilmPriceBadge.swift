@@ -1,11 +1,21 @@
+#if DEBUG
 import SwiftUI
 
 enum FilmPriceBadge {
     static func label(for film: Film) -> String {
         if film.isFree {
-            return String(localized: "price_free_short")
+            return "Free"
         }
-        return String(format: String(localized: "price_sar_format"), film.price)
+        return formattedSAR(film.price)
+    }
+
+    /// Display-only SAR formatting. Whole riyals omit `.00`; fractional amounts keep two decimals.
+    static func formattedSAR(_ price: Double) -> String {
+        let cents = (price * 100).rounded()
+        if cents.truncatingRemainder(dividingBy: 100) == 0 {
+            return String(format: "SAR %d", Int(cents / 100))
+        }
+        return String(format: "SAR %.2f", price)
     }
 }
 
@@ -25,3 +35,5 @@ struct FilmPricePill: View {
             )
     }
 }
+#endif
+

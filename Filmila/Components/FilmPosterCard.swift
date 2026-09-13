@@ -52,7 +52,7 @@ struct FilmPosterCard: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
-                if let genre = film.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+                if let genre = film.localizedGenreLabel {
                     Text(genre)
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textSecondary)

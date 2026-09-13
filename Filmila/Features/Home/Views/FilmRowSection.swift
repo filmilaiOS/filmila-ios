@@ -11,18 +11,11 @@ struct FilmRowSection: View {
     var body: some View {
         if !films.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                if accentHeader || systemImage != nil {
-                    FilmilaSectionHeader(
-                        title: title,
-                        systemImage: systemImage,
-                        accentTitle: accentHeader
-                    )
-                } else {
-                    Text(title)
-                        .font(.filmilaTitleSm)
-                        .foregroundStyle(FilmilaColors.textPrimary)
-                        .padding(.horizontal, Spacing.lg)
-                }
+                FilmilaSectionHeader(
+                    title: title,
+                    systemImage: systemImage,
+                    accentTitle: accentHeader
+                )
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(alignment: .top, spacing: Spacing.md) {

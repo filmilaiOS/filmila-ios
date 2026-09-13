@@ -45,7 +45,7 @@ struct FilmPosterCardWithGenreOverlay: View {
         ZStack(alignment: .topLeading) {
             FilmPosterCard(film: film, width: width, averageRating: averageRating)
 
-            if let genre = film.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+            if let genre = film.localizedGenreLabel {
                 Text(genre)
                     .font(.filmilaCapsBadge)
                     .foregroundStyle(FilmilaColors.textPrimary)

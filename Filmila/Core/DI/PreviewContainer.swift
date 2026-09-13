@@ -1,3 +1,4 @@
+#if DEBUG
 import Combine
 import Foundation
 import Supabase
@@ -77,6 +78,8 @@ private final class PreviewAuthService: AuthServiceProtocol {
     func signOut() async throws {}
 
     func refreshProfile() async {}
+
+    func deleteAccount() async throws {}
 }
 
 private final class PreviewFilmsRepository: FilmsRepositoryProtocol {
@@ -424,3 +427,4 @@ extension View {
 
 /// Legacy alias — use `PreviewContainer` in new code.
 typealias MockAppContainer = PreviewContainer
+#endif

@@ -1,3 +1,4 @@
+#if DEBUG
 import StoreKit
 import SwiftUI
 
@@ -42,13 +43,13 @@ struct IAPPurchaseSheet: View {
                     Button {
                         Task { await paymentVM.purchase(filmId: film.id) }
                     } label: {
-                        Text(String(localized: "detail_iap_purchase"))
+                        Text("Purchase")
                             .font(.filmilaBodyMedium)
                     }
                     .buttonStyle(FilmilaPrimaryButtonStyle())
                     .disabled(paymentVM.state == .loading)
                 } else if paymentVM.state != .loading {
-                    Text(String(localized: "iap_product_unavailable"))
+                    Text("Unavailable")
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textMuted)
                         .multilineTextAlignment(.center)
@@ -57,7 +58,7 @@ struct IAPPurchaseSheet: View {
                 Button {
                     Task { await paymentVM.restore() }
                 } label: {
-                    Text(String(localized: "detail_iap_restore"))
+                    Text(String(localized: "common_cancel"))
                         .font(.filmilaBody)
                         .foregroundStyle(FilmilaColors.accent)
                 }
@@ -69,7 +70,7 @@ struct IAPPurchaseSheet: View {
                 }
 
                 if case .cancelled = paymentVM.state {
-                    Button(String(localized: "detail_iap_close")) {
+                    Button(String(localized: "common_cancel")) {
                         paymentVM.resetToIdle()
                         dismiss()
                     }
@@ -86,11 +87,11 @@ struct IAPPurchaseSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(Spacing.lg)
-            .navigationTitle(String(localized: "detail_iap_title"))
+            .navigationTitle("Preview")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "detail_iap_close")) {
+                    Button(String(localized: "common_cancel")) {
                         dismiss()
                     }
                 }
@@ -118,7 +119,7 @@ struct IAPPurchaseSheet: View {
                 .font(.filmilaPrice)
                 .foregroundStyle(FilmilaColors.accent)
         } else {
-            Text(String(format: String(localized: "price_sar_format"), film.price))
+            Text(String(format: "%.2f", film.price))
                 .font(.filmilaPrice)
                 .foregroundStyle(FilmilaColors.accent)
         }
@@ -135,7 +136,7 @@ struct IAPPurchaseSheet: View {
                 .foregroundStyle(FilmilaColors.destructive)
                 .multilineTextAlignment(.center)
         case .cancelled:
-            Text(String(localized: "iap_cancelled"))
+            Text(String(localized: "common_cancel"))
                 .font(.filmilaCaption)
                 .foregroundStyle(FilmilaColors.textSecondary)
                 .multilineTextAlignment(.center)
@@ -143,7 +144,6 @@ struct IAPPurchaseSheet: View {
     }
 }
 
-#if DEBUG
 #Preview {
     Text(String(localized: "common_preview_placeholder"))
         .sheet(isPresented: .constant(true)) {

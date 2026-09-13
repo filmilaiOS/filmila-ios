@@ -48,6 +48,7 @@
 		3A5878AD92425D842B741301 /* SearchFilterPillsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BD722FDA92B907B428F6B8 /* SearchFilterPillsRow.swift */; };
 		3C7234ABF7C4D830DAFFCD4C /* FilmPosterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62BE0CED098F08E3D04EBF06 /* FilmPosterCard.swift */; };
 		3CE60F49F7D7E4E650A8682D /* PreviewContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 273B97FB0BE410D48D41DA76 /* PreviewContainer.swift */; };
+		A41C7E90B2D14F6A9E0C1D2E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B52D8F01C3E25A7B0F1D2E3F /* PrivacyInfo.xcprivacy */; };
 		3EF7EF5BA35E7170C883867D /* ForumCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F91FE2BFF4FBB915A6B6C0 /* ForumCategory.swift */; };
 		4A85B523C28E2FB9C570BA54 /* LandingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA1724C1B834E2F8C91C0F9 /* LandingView.swift */; };
 		4B45566BDDE14C770A6C7606 /* MyListLoggedOutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82DB2416A4EBA38A7DC3A830 /* MyListLoggedOutView.swift */; };
@@ -254,6 +255,7 @@
 		9635243FD2819A82485FE1D7 /* InboxNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InboxNotification.swift; sourceTree = "<group>"; };
 		9877CC6348411F734474BC0D /* ShellNavigationEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellNavigationEnvironment.swift; sourceTree = "<group>"; };
 		9AACEAA384CC0C46416072D0 /* Filmila.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Filmila.entitlements; sourceTree = "<group>"; };
+		B52D8F01C3E25A7B0F1D2E3F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9E05D3CF1F3CCA1ACA8B1F48 /* KeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainManager.swift; sourceTree = "<group>"; };
 		9E52A24B0B11F787CD335303 /* HeroFilmSlide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroFilmSlide.swift; sourceTree = "<group>"; };
 		9F5194E2D0E1C4352033AFBC /* Filmila.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Filmila.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -901,6 +903,7 @@
 				9AACEAA384CC0C46416072D0 /* Filmila.entitlements */,
 				D9CBF4F94EF460F8EA167ABB /* Info.plist */,
 				786EAEF9ABED4FF52F5DF35C /* LaunchScreen.storyboard */,
+				B52D8F01C3E25A7B0F1D2E3F /* PrivacyInfo.xcprivacy */,
 			);
 			path = Supporting;
 			sourceTree = "<group>";
@@ -987,6 +990,7 @@
 				F62698B125DB047E75A81844 /* Assets.xcassets in Resources */,
 				C572435BBEA36761ECFA25F4 /* LaunchScreen.storyboard in Resources */,
 				9FC3429CC2DB4EE7647E0C6C /* Localizable.strings in Resources */,
+				A41C7E90B2D14F6A9E0C1D2E /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1185,7 +1189,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.filmila.app;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -1210,7 +1214,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.filmila.app;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};

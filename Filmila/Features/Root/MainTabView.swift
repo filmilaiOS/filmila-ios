@@ -5,11 +5,6 @@ private struct PresentedFilm: Identifiable {
     let id: Int
 }
 
-private struct PresentedOrder: Identifiable {
-    let orderId: String
-    var id: String { orderId }
-}
-
 private enum MainTabTag {
     static let home = 0
     static let search = 1
@@ -30,7 +25,6 @@ struct MainTabView: View {
     @State private var showCommunity = false
     @State private var comingSoonTitle: String?
     @State private var presentedFilm: PresentedFilm?
-    @State private var paymentOrder: PresentedOrder?
     @State private var externalSearchQuery: String?
 
     init(container: AppContainer) {
@@ -139,12 +133,15 @@ struct MainTabView: View {
                 selectedTab = MainTabTag.home
                 presentedFilm = PresentedFilm(id: filmId)
                 deepLinkHandler.pendingRoute = nil
-            case .paymentComplete:
-                break
+            case let .paymentComplete(filmId):
+                deepLinkHandler.pendingRoute = nil
+                if let filmId {
+                    selectedTab = MainTabTag.home
+                    presentedFilm = PresentedFilm(id: filmId)
+                }
             case .paymentCancelled:
-                break
-            case let .paymentCallback(orderId):
-                paymentOrder = PresentedOrder(orderId: orderId)
+                deepLinkHandler.pendingRoute = nil
+            case .paymentCallback:
                 deepLinkHandler.pendingRoute = nil
             case .profile:
                 selectedTab = MainTabTag.profile
@@ -210,32 +207,11 @@ struct MainTabView: View {
                 set: { if !$0 { comingSoonTitle = nil } }
             )
         ) {
-            Button(String(localized: "detail_iap_close"), role: .cancel) {
+            Button(String(localized: "common_cancel"), role: .cancel) {
                 comingSoonTitle = nil
             }
         } message: {
             Text(String(localized: "shell_coming_soon_body"))
-        }
-        .sheet(item: $paymentOrder) { order in
-            NavigationStack {
-                VStack(spacing: Spacing.lg) {
-                    Text(String(localized: "payment_callback_title"))
-                        .font(.filmilaTitleSm)
-                        .foregroundStyle(FilmilaColors.textPrimary)
-                    Text(order.orderId)
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                        .textSelection(.enabled)
-                    Button(String(localized: "detail_iap_close")) {
-                        paymentOrder = nil
-                    }
-                    .buttonStyle(FilmilaPrimaryButtonStyle())
-                }
-                .padding(Spacing.lg)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(FilmilaColors.background)
-            }
-            .presentationDetents([.medium])
         }
     }
 

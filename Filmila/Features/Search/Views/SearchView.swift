@@ -125,7 +125,7 @@ struct SearchView: View {
                 set: { if !$0 { comingSoonTitle = nil } }
             )
         ) {
-            Button(String(localized: "detail_iap_close"), role: .cancel) {
+            Button(String(localized: "common_cancel"), role: .cancel) {
                 comingSoonTitle = nil
             }
         } message: {

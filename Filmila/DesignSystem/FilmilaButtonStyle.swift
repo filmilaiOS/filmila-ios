@@ -21,12 +21,13 @@ struct FilmilaPrimaryButtonStyle: ButtonStyle {
 
 struct FilmilaSecondaryButtonStyle: ButtonStyle {
     var cornerRadius: CGFloat = 12
+    var height: CGFloat = 50
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(FilmilaColors.accent)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: height)
             .background(FilmilaColors.accentSubtle)
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

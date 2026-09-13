@@ -85,7 +85,6 @@ struct HomeView: View {
             title: String(localized: "home_trending"),
             films: vm.trending,
             averageRatingByFilmId: vm.averageRatingByFilmId,
-            accentHeader: true,
             systemImage: "sparkles"
         )
 
@@ -119,7 +118,7 @@ struct HomeView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.sm) {
                         ForEach(genres, id: \.self) { genre in
-                            Text(genre)
+                            Text(Film.localizedGenreName(genre))
                                 .font(.filmilaCaptionMd)
                                 .foregroundStyle(FilmilaColors.textSecondary)
                                 .padding(.horizontal, Spacing.md)

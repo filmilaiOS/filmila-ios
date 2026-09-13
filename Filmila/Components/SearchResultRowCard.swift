@@ -16,16 +16,22 @@ struct SearchResultRowCard: View {
                     .foregroundStyle(FilmilaColors.textPrimary)
                     .lineLimit(1)
 
-                if let filmmaker = film.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !filmmaker.isEmpty {
+                if let filmmaker = film.publicFilmmakerDisplayName {
                     Text(filmmaker)
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textSecondary)
                         .lineLimit(1)
                 }
 
-                Text(FilmPriceBadge.label(for: film))
-                    .font(.filmilaCaptionMd)
-                    .foregroundStyle(FilmilaColors.accent)
+                if let genre = film.localizedGenreLabel {
+                    Text(genre)
+                        .font(.filmilaCaptionMd)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                } else if let duration = film.formattedDurationForListing {
+                    Text(duration)
+                        .font(.filmilaCaptionMd)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                }
             }
 
             Spacer(minLength: 0)

@@ -38,8 +38,9 @@ struct ProfileView: View {
     @State private var historyItems: [ContinueWatchingItem] = []
     @State private var watchlistFilms: [Film] = []
     @State private var isLoadingActivity = false
-    @State private var isRestoringPurchases = false
-    @State private var restoreErrorMessage: String?
+    @State private var showDeleteAccountConfirm = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountErrorMessage: String?
 
     private static let privacyPolicyURL = URL(string: "https://filmila.com/privacy")!
     private static let termsOfServiceURL = URL(string: "https://filmila.com/terms")!
@@ -66,37 +67,33 @@ struct ProfileView: View {
         .onChange(of: selectedTab) { _ in
             Task { await loadActivityData() }
         }
-        .alert(String(localized: "profile_restore_error_title"), isPresented: Binding(
-            get: { restoreErrorMessage != nil },
-            set: { if !$0 { restoreErrorMessage = nil } }
-        )) {
-            Button(String(localized: "profile_ok"), role: .cancel) {
-                restoreErrorMessage = nil
+        .alert(String(localized: "profile_delete_account_confirm_title"), isPresented: $showDeleteAccountConfirm) {
+            Button(String(localized: "common_cancel"), role: .cancel) {}
+            Button(String(localized: "profile_delete_account_confirm_action"), role: .destructive) {
+                Task { await performDeleteAccount() }
             }
         } message: {
-            if let restoreErrorMessage {
-                Text(restoreErrorMessage)
+            Text(String(localized: "profile_delete_account_confirm_message"))
+        }
+        .alert(String(localized: "profile_delete_account_error_title"), isPresented: Binding(
+            get: { deleteAccountErrorMessage != nil },
+            set: { if !$0 { deleteAccountErrorMessage = nil } }
+        )) {
+            Button(String(localized: "profile_ok"), role: .cancel) {
+                deleteAccountErrorMessage = nil
+            }
+        } message: {
+            if let deleteAccountErrorMessage {
+                Text(deleteAccountErrorMessage)
             }
         }
     }
 
     private var profileHeaderCard: some View {
         VStack(spacing: Spacing.md) {
-            ZStack(alignment: .bottomTrailing) {
-                avatar
-                    .frame(width: 96, height: 96)
-
-                Circle()
-                    .fill(FilmilaColors.accent)
-                    .frame(width: 28, height: 28)
-                    .overlay {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    .offset(x: 4, y: 4)
-            }
-            .padding(.top, Spacing.md)
+            avatar
+                .frame(width: 96, height: 96)
+                .padding(.top, Spacing.md)
 
             Text(displayName)
                 .font(.filmilaTitle)
@@ -371,22 +368,23 @@ struct ProfileView: View {
             settingsDivider
 
             Button {
-                Task { await restorePurchases() }
+                showDeleteAccountConfirm = true
             } label: {
                 HStack {
-                    Text(String(localized: "profile_restore_purchases"))
-                        .font(.filmilaBody)
-                        .foregroundStyle(FilmilaColors.textPrimary)
+                    Text(String(localized: "profile_delete_account"))
+                        .font(.filmilaBodyMedium)
+                        .foregroundStyle(FilmilaColors.destructive)
                     Spacer()
-                    if isRestoringPurchases {
+                    if isDeletingAccount {
                         ProgressView().tint(FilmilaColors.accent)
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.md)
             }
             .buttonStyle(.plain)
-            .disabled(isRestoringPurchases)
+            .disabled(isDeletingAccount)
 
             settingsDivider
 
@@ -401,6 +399,7 @@ struct ProfileView: View {
                     .padding(.vertical, Spacing.md)
             }
             .buttonStyle(.plain)
+            .disabled(isDeletingAccount)
         }
         .background(FilmilaColors.surface)
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -451,13 +450,15 @@ struct ProfileView: View {
         historyItems = resolved
     }
 
-    private func restorePurchases() async {
-        isRestoringPurchases = true
-        defer { isRestoringPurchases = false }
+    private func performDeleteAccount() async {
+        guard !isDeletingAccount else { return }
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
         do {
-            try await container.iapService.restorePurchases()
+            try await auth.deleteAccount()
         } catch {
-            restoreErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            deleteAccountErrorMessage = (error as? LocalizedError)?.errorDescription
+                ?? error.localizedDescription
         }
     }
 }

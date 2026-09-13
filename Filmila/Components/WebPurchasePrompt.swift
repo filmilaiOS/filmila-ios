@@ -1,13 +1,14 @@
+#if DEBUG
 import SwiftUI
 
 struct WebPurchasePrompt: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(String(localized: "detail_web_purchase_title"))
+            Text("Checkout")
                 .font(.filmilaBodyMedium)
                 .foregroundStyle(FilmilaColors.textPrimary)
             Link(destination: URL(string: "https://www.filmila.com")!) {
-                Text(String(localized: "detail_web_purchase_link"))
+                Text("filmila.com")
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.accent)
             }
@@ -19,7 +20,6 @@ struct WebPurchasePrompt: View {
     }
 }
 
-#if DEBUG
 #Preview {
     WebPurchasePrompt()
         .padding()

@@ -1,3 +1,4 @@
+#if DEBUG
 import SafariServices
 import SwiftUI
 
@@ -30,3 +31,4 @@ struct SafariCheckoutView: UIViewControllerRepresentable {
         }
     }
 }
+#endif

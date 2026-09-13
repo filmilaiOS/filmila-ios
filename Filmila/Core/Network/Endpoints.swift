@@ -14,6 +14,7 @@ enum Endpoint {
     case presignUpload(filmId: Int)
     case recordIAPPurchase(filmId: Int, transactionId: String, userId: String)
     case sendTicketEmail(filmId: Int, userId: String)
+    case deleteAccount
 
     func urlRequest() throws -> URLRequest {
         switch self {
@@ -41,6 +42,14 @@ enum Endpoint {
             let url = Env.apiBaseURL.appendingPathComponent("api/send-ticket-email", isDirectory: false)
             let body = SendTicketEmailBody(filmId: filmId, userId: userId)
             return try Self.postJSON(url: url, body: body)
+
+        case .deleteAccount:
+            // Same viewer-dashboard route as filmila.com (`POST /api/request-account-deletion`).
+            let url = Env.apiBaseURL.appendingPathComponent("api/request-account-deletion", isDirectory: false)
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            return Self.applyBearer(to: request)
         }
     }
 

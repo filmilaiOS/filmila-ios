@@ -16,6 +16,8 @@ private func isTransientNetworkFailure(_ error: Error) -> Bool {
 enum AuthServiceError: LocalizedError, Equatable {
     case viewerRoleRequired
     case profileNotFound
+    case notSignedIn
+    case accountDeletionUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -23,6 +25,10 @@ enum AuthServiceError: LocalizedError, Equatable {
             return String(localized: "auth_error_viewer_only")
         case .profileNotFound:
             return String(localized: "auth_error_profile_not_found")
+        case .notSignedIn:
+            return String(localized: "profile_delete_account_not_signed_in")
+        case .accountDeletionUnavailable:
+            return String(localized: "profile_delete_account_unavailable")
         }
     }
 }
@@ -50,6 +56,8 @@ protocol AuthServiceProtocol: AnyObject {
     var currentToken: String? { get }
     /// Reloads `profile` from Supabase when a session exists (e.g. profile sheet opened).
     func refreshProfile() async
+    /// Requests server-side account deletion, then clears the local session.
+    func deleteAccount() async throws
 }
 
 final class AuthService: AuthServiceProtocol, ObservableObject {
@@ -231,6 +239,35 @@ final class AuthService: AuthServiceProtocol, ObservableObject {
         try await supabaseManager.client.auth.signOut()
         await MainActor.run {
             clearPublishedAuthState(reason: "signOut() user initiated")
+        }
+    }
+
+    func deleteAccount() async throws {
+        let hasSession = await MainActor.run { session != nil }
+        guard hasSession else {
+            throw AuthServiceError.notSignedIn
+        }
+        do {
+            let request = try Endpoint.deleteAccount.urlRequest()
+            try await APIClient.shared.performAuthorized(request)
+        } catch let error as NetworkError {
+            switch error {
+            case .unauthorized:
+                throw AuthServiceError.notSignedIn
+            case .notFound:
+                throw AuthServiceError.accountDeletionUnavailable
+            case let .httpError(code) where code == 501 || code == 405:
+                throw AuthServiceError.accountDeletionUnavailable
+            default:
+                throw error
+            }
+        }
+#if DEBUG
+        await MainActor.run { self.previewUserEmailOverride = nil }
+#endif
+        try? await supabaseManager.client.auth.signOut()
+        await MainActor.run {
+            clearPublishedAuthState(reason: "deleteAccount() completed")
         }
     }
 

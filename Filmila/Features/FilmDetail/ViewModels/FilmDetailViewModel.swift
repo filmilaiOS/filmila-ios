@@ -4,27 +4,7 @@ enum AccessState: Equatable {
     case checking
     case free
     case purchased
-    case requiresPurchase(product: Any?)
-    case redirectToWeb
-
-    static func == (lhs: AccessState, rhs: AccessState) -> Bool {
-        switch (lhs, rhs) {
-        case (.checking, .checking),
-             (.free, .free),
-             (.purchased, .purchased),
-             (.redirectToWeb, .redirectToWeb):
-            return true
-        case (.requiresPurchase, .requiresPurchase):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-struct WebCheckoutItem: Identifiable, Equatable {
-    let id = UUID()
-    let url: URL
+    case locked
 }
 
 @MainActor
@@ -41,22 +21,15 @@ final class FilmDetailViewModel: ObservableObject {
     @Published private(set) var isInFavorites: Bool = false
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var errorMessage: String?
-    @Published private(set) var isAwaitingWebPurchaseReturn = false
-    @Published private(set) var purchaseNotice: String?
-    @Published var webCheckout: WebCheckoutItem?
 
     private let filmId: Int
     private let filmsRepo: FilmsRepositoryProtocol
     private let accessChecker: AccessCheckerProtocol
-    private let iapService: IAPServiceProtocol
-    private let authService: AuthServiceProtocol
 
     init(filmId: Int, container: AppContainer) {
         self.filmId = filmId
         filmsRepo = container.filmsRepo
         accessChecker = container.accessChecker
-        iapService = container.iapService
-        authService = container.authService
     }
 
     func load() async {
@@ -116,60 +89,7 @@ final class FilmDetailViewModel: ObservableObject {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
 
-        do {
-            if let product = try await iapService.loadProduct(filmId: filmId) {
-                accessState = .requiresPurchase(product: product)
-            } else {
-                accessState = .redirectToWeb
-            }
-        } catch {
-            accessState = .redirectToWeb
-        }
-    }
-
-    func startWebPurchase() {
-        guard let film, !film.isFree else { return }
-        purchaseNotice = nil
-        guard let token = authService.currentToken, !token.isEmpty else {
-            errorMessage = String(localized: "geidea_payment_not_signed_in")
-            return
-        }
-        guard let url = FilmWebPurchaseURL.purchaseURL(forFilmId: film.id, accessToken: token) else { return }
-        markWebPurchaseStarted()
-        webCheckout = WebCheckoutItem(url: url)
-    }
-
-    func completeWebCheckoutFlow() async {
-        webCheckout = nil
-        await recheckAccessAfterWebPurchase()
-    }
-
-    func handlePaymentCompleteDeepLink(filmId: Int?) async {
-        guard isAwaitingWebPurchaseReturn else { return }
-        if let filmId, filmId != self.filmId { return }
-        await completeWebCheckoutFlow()
-    }
-
-    func handlePaymentCancelledDeepLink(filmId: Int?) async {
-        guard isAwaitingWebPurchaseReturn else { return }
-        if let filmId, filmId != self.filmId { return }
-        webCheckout = nil
-        isAwaitingWebPurchaseReturn = false
-        purchaseNotice = String(localized: "detail_purchase_cancelled")
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-        purchaseNotice = nil
-    }
-
-    func markWebPurchaseStarted() {
-        isAwaitingWebPurchaseReturn = true
-    }
-
-    func recheckAccessAfterWebPurchase() async {
-        guard isAwaitingWebPurchaseReturn else { return }
-        await checkAccess()
-        if case .purchased = accessState {
-            isAwaitingWebPurchaseReturn = false
-        }
+        accessState = .locked
     }
 
     func toggleWatchlist() async {

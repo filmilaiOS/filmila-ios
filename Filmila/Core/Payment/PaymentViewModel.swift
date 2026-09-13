@@ -47,7 +47,7 @@ final class PaymentViewModel: ObservableObject {
             case .cancelled:
                 state = .cancelled
             case .pending:
-                state = .failed(String(localized: "iap_pending"))
+                state = .failed(String(localized: "player_error_unavailable"))
             case let .failed(error):
                 state = .failed((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
             }

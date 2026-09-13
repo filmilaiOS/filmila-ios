@@ -4,8 +4,9 @@ struct FilmDetailView: View {
     private let container: AppContainer
 
     @Environment(\.scenePhase) private var scenePhase
-    @EnvironmentObject private var deepLinkHandler: DeepLinkHandler
     @EnvironmentObject private var networkMonitor: NetworkMonitor
+    @EnvironmentObject private var auth: AuthService
+    @Environment(\.shellNavigation) private var shellNavigation
     @StateObject private var vm: FilmDetailViewModel
     @State private var commentDraft = ""
     @State private var playbackFilm: Film?
@@ -36,12 +37,6 @@ struct FilmDetailView: View {
                                 .foregroundStyle(FilmilaColors.destructive)
                                 .padding(.horizontal, Spacing.lg)
                         }
-                        if let notice = vm.purchaseNotice {
-                            Text(notice)
-                                .font(.filmilaCaption)
-                                .foregroundStyle(FilmilaColors.textSecondary)
-                                .padding(.horizontal, Spacing.lg)
-                        }
                         descriptionSection(film: film)
                         ratingReviewsSection
                         commentsSection
@@ -52,33 +47,17 @@ struct FilmDetailView: View {
                 .fullScreenCover(item: $playbackFilm) { film in
                     PlayerContainerView(film: film, container: container, networkMonitor: networkMonitor)
                 }
-                .fullScreenCover(item: $vm.webCheckout) { checkout in
-                    SafariCheckoutView(url: checkout.url) {
-                        Task { await vm.completeWebCheckoutFlow() }
-                    }
-                    .ignoresSafeArea()
-                }
                 .sheet(isPresented: $showRatingSheet, onDismiss: {
                     vm.clearRatingFeedbackMessage()
                 }) {
                     ratingSheet
                 }
-                .onChange(of: deepLinkHandler.pendingRoute) { route in
-                    guard let route else { return }
-                    switch route {
-                    case let .paymentComplete(filmId):
-                        deepLinkHandler.pendingRoute = nil
-                        Task { await vm.handlePaymentCompleteDeepLink(filmId: filmId) }
-                    case let .paymentCancelled(filmId):
-                        deepLinkHandler.pendingRoute = nil
-                        Task { await vm.handlePaymentCancelledDeepLink(filmId: filmId) }
-                    default:
-                        break
-                    }
-                }
                 .onChange(of: scenePhase) { newPhase in
                     guard newPhase == .active else { return }
-                    Task { await vm.recheckAccessAfterWebPurchase() }
+                    Task { await vm.checkAccess() }
+                }
+                .onChange(of: auth.session?.user.id) { _ in
+                    Task { await vm.checkAccess() }
                 }
                 .onReceive(vm.$userRating) { value in
                     userStarBinding = value ?? 0
@@ -128,15 +107,8 @@ struct FilmDetailView: View {
                 }
                 .buttonStyle(FilmilaPrimaryButtonStyle())
                 .disabled(vm.accessState == .checking)
-            } else if !film.isFree {
-                Button {
-                    vm.startWebPurchase()
-                } label: {
-                    Text(purchaseButtonTitle(for: film))
-                        .font(.filmilaBodyMedium)
-                }
-                .buttonStyle(FilmilaPrimaryButtonStyle())
-                .disabled(vm.accessState == .checking)
+            } else if vm.accessState != .checking, !film.isFree {
+                lockedAccessCard
             }
 
             HStack(spacing: Spacing.sm) {
@@ -149,7 +121,7 @@ struct FilmDetailView: View {
                     )
                     .font(.filmilaCaptionMd)
                 }
-                .buttonStyle(FilmilaSecondaryButtonStyle())
+                .buttonStyle(FilmilaSecondaryButtonStyle(height: 42))
                 .frame(maxWidth: .infinity)
 
                 Button {
@@ -161,11 +133,42 @@ struct FilmDetailView: View {
                     )
                     .font(.filmilaCaptionMd)
                 }
-                .buttonStyle(FilmilaSecondaryButtonStyle())
+                .buttonStyle(FilmilaSecondaryButtonStyle(height: 42))
                 .frame(maxWidth: .infinity)
             }
         }
         .padding(.horizontal, Spacing.lg)
+    }
+
+    private var lockedAccessCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text(String(localized: "detail_locked_title"))
+                .font(.filmilaBodyMedium)
+                .foregroundStyle(FilmilaColors.textPrimary)
+
+            if auth.session == nil {
+                Text(String(localized: "detail_locked_guest_body"))
+                    .font(.filmilaBody)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+
+                Button(String(localized: "auth_sign_in")) {
+                    shellNavigation.presentLogin()
+                }
+                .buttonStyle(FilmilaSecondaryButtonStyle(height: 42))
+            } else {
+                Text(String(localized: "detail_locked_signed_in_body"))
+                    .font(.filmilaBody)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.md)
+        .background(FilmilaColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+        )
     }
 
     private var ratingSheet: some View {
@@ -211,11 +214,6 @@ struct FilmDetailView: View {
         .presentationDragIndicator(.visible)
     }
 
-    private func purchaseButtonTitle(for film: Film) -> String {
-        let price = String(format: String(localized: "price_sar_format"), film.price)
-        return "\(String(localized: "detail_purchase")) · \(price)"
-    }
-
     private func descriptionSection(film: Film) -> some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             if let desc = film.displayDescription, !desc.isEmpty {
@@ -228,7 +226,7 @@ struct FilmDetailView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Spacing.sm) {
                         ForEach(genreTags(from: genre), id: \.self) { tag in
-                            Text("#\(tag)")
+                            Text("#\(Film.localizedGenreName(tag))")
                                 .font(.filmilaCaptionMd)
                                 .foregroundStyle(FilmilaColors.textSecondary)
                                 .padding(.horizontal, 12)

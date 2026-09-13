@@ -11,8 +11,17 @@ struct FeaturedHeroSection: View {
     @State private var isInWatchlist = false
     @State private var isTogglingWatchlist = false
 
+    private var isCompactHero: Bool {
+        UIScreen.main.bounds.height < 720
+    }
+
     private var heroHeight: CGFloat {
-        UIScreen.main.bounds.height * 0.52
+        let screenHeight = UIScreen.main.bounds.height
+        let proposed = screenHeight * 0.52
+        if isCompactHero {
+            return min(proposed, 340)
+        }
+        return min(proposed, 480)
     }
 
     var body: some View {
@@ -36,6 +45,7 @@ struct FeaturedHeroSection: View {
                         .font(.filmilaDisplayMd)
                         .foregroundStyle(FilmilaColors.textPrimary)
                         .lineLimit(2)
+                        .minimumScaleFactor(0.9)
                         .multilineTextAlignment(.leading)
 
                     metadataRow
@@ -45,7 +55,7 @@ struct FeaturedHeroSection: View {
                         Text(description)
                             .font(.filmilaBody)
                             .foregroundStyle(FilmilaColors.textSecondary)
-                            .lineLimit(2)
+                            .lineLimit(isCompactHero ? 1 : 2)
                             .multilineTextAlignment(.leading)
                             .padding(.top, 2)
                     }
@@ -71,10 +81,10 @@ struct FeaturedHeroSection: View {
                         .buttonStyle(FilmilaAccentOutlineButtonStyle())
                         .disabled(isTogglingWatchlist)
                     }
-                    .padding(.top, Spacing.sm)
+                    .padding(.top, isCompactHero ? 4 : Spacing.sm)
                 }
                 .padding(.horizontal, Spacing.lg)
-                .padding(.bottom, Spacing.lg)
+                .padding(.bottom, isCompactHero ? Spacing.md : Spacing.lg)
             }
             .frame(height: heroHeight)
             .frame(maxWidth: .infinity)
@@ -86,6 +96,13 @@ struct FeaturedHeroSection: View {
     }
 
     private var metadataRow: some View {
+        ViewThatFits(in: .horizontal) {
+            metadataContent(includeGenre: true)
+            metadataContent(includeGenre: false)
+        }
+    }
+
+    private func metadataContent(includeGenre: Bool) -> some View {
         HStack(spacing: Spacing.sm) {
             if let averageRating, averageRating > 0 {
                 HStack(spacing: 4) {
@@ -108,7 +125,7 @@ struct FeaturedHeroSection: View {
                 .foregroundStyle(FilmilaColors.textSecondary)
             }
 
-            if let genre = film.genre?.trimmingCharacters(in: .whitespacesAndNewlines), !genre.isEmpty {
+            if includeGenre, let genre = film.localizedGenreLabel {
                 Text(genre)
                     .font(.filmilaCapsBadge)
                     .foregroundStyle(FilmilaColors.textPrimary)
@@ -116,10 +133,11 @@ struct FeaturedHeroSection: View {
                     .padding(.vertical, 5)
                     .background(FilmilaColors.surfaceElevated.opacity(0.85))
                     .clipShape(Capsule())
+                    .lineLimit(1)
             }
-
-            FilmPricePill(film: film, compact: true)
         }
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     private var watchlistButtonTitle: String {

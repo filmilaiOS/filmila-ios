@@ -12,8 +12,7 @@ struct ContinueWatchingRow: View {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 FilmilaSectionHeader(
                     title: String(localized: "home_continue_watching"),
-                    systemImage: "clock.fill",
-                    accentTitle: true
+                    systemImage: "clock.fill"
                 )
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -80,7 +79,7 @@ private struct ContinueWatchingCard: View {
                     .lineLimit(1)
 
                 HStack(spacing: 4) {
-                    if let filmmaker = item.film.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !filmmaker.isEmpty {
+                    if let filmmaker = item.film.publicFilmmakerDisplayName {
                         Text(filmmaker)
                             .lineLimit(1)
                     }

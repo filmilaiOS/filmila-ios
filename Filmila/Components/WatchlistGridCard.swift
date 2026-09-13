@@ -16,10 +16,6 @@ struct WatchlistGridCard: View {
                     .clipped()
 
                 VStack {
-                    HStack {
-                        FilmPricePill(film: film, compact: true)
-                        Spacer(minLength: 0)
-                    }
                     Spacer(minLength: 0)
                     Image(systemName: "play.fill")
                         .font(.system(size: 18, weight: .bold))
@@ -30,10 +26,14 @@ struct WatchlistGridCard: View {
                         .shadow(color: FilmilaColors.accent.opacity(0.45), radius: 8, y: 4)
                     Spacer(minLength: 0)
                 }
-                .padding(10)
+                .padding(8)
             }
             .frame(width: width, height: posterHeight)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+            )
 
             Text(film.displayTitle)
                 .font(.filmilaBodyMedium)
@@ -41,7 +41,7 @@ struct WatchlistGridCard: View {
                 .lineLimit(1)
 
             HStack(spacing: 6) {
-                if let filmmaker = publicFilmmakerName {
+                if let filmmaker = film.publicFilmmakerDisplayName {
                     Text(filmmaker)
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textSecondary)
@@ -81,17 +81,6 @@ struct WatchlistGridCard: View {
             }
         }
         .frame(width: width, alignment: .topLeading)
-    }
-
-    /// Catalog `filmmaker` is often an email. Show a name only; omit the line otherwise.
-    private var publicFilmmakerName: String? {
-        guard let raw = film.filmmaker?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
-            return nil
-        }
-        if raw.contains("@") {
-            return nil
-        }
-        return raw
     }
 }
 
