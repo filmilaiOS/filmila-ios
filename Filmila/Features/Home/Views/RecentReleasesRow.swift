@@ -19,7 +19,7 @@ struct RecentReleasesRow: View {
                             NavigationLink {
                                 FilmDetailView(filmId: film.id, container: container)
                             } label: {
-                                FilmPosterCardWithGenreOverlay(
+                                FilmPosterCard(
                                     film: film,
                                     width: 130,
                                     averageRating: averageRatingByFilmId[film.id]
@@ -32,29 +32,6 @@ struct RecentReleasesRow: View {
                 }
             }
             .padding(.top, Spacing.xl)
-        }
-    }
-}
-
-struct FilmPosterCardWithGenreOverlay: View {
-    let film: Film
-    var width: CGFloat = 130
-    var averageRating: Double?
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            FilmPosterCard(film: film, width: width, averageRating: averageRating)
-
-            if let genre = film.localizedGenreLabel {
-                Text(genre)
-                    .font(.filmilaCapsBadge)
-                    .foregroundStyle(FilmilaColors.textPrimary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(FilmilaColors.posterBadgeBackdrop)
-                    .clipShape(Capsule())
-                    .padding(8)
-            }
         }
     }
 }

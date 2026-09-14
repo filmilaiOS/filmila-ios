@@ -40,14 +40,7 @@ struct AuthScreenChrome<Content: View>: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.lg) {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        HStack(spacing: 0) {
-                            Text("Filmila")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundStyle(FilmilaColors.textPrimary)
-                            Text(".")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundStyle(FilmilaColors.accent)
-                        }
+                        FilmilaWordmark(size: 28)
 
                         Text(title)
                             .font(.filmilaTitle)

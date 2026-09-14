@@ -131,11 +131,12 @@ struct LibraryView: View {
                 vm.selectedTab = tab
             }
         } label: {
-            HStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Text(tabTitle(tab))
                     .font(.filmilaCaptionMd)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text("\(count)")
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
@@ -149,8 +150,9 @@ struct LibraryView: View {
             }
             .foregroundStyle(isSelected ? FilmilaColors.textInverse : FilmilaColors.textSecondary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .padding(.horizontal, 4)
+            .frame(minHeight: 44)
             .background(
                 Group {
                     if isSelected {

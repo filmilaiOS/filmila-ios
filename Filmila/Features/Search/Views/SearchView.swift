@@ -2,53 +2,69 @@ import SwiftUI
 import UIKit
 
 private enum SearchGenres {
-    static let options: [(key: String, label: String)] = [
-        ("", String(localized: "search_filter_all")),
-        ("Drama", String(localized: "genre_drama")),
-        ("Comedy", String(localized: "genre_comedy")),
-        ("Documentary", String(localized: "genre_documentary")),
-        ("Animation", String(localized: "genre_animation")),
-        ("Horror", String(localized: "genre_horror")),
-        ("Romance", String(localized: "genre_romance")),
-        ("Thriller", String(localized: "genre_thriller"))
-    ]
+    static var options: [(key: String, label: String)] {
+        [
+            ("", String(localized: "search_filter_all")),
+            ("Drama", String(localized: "genre_drama")),
+            ("Comedy", String(localized: "genre_comedy")),
+            ("Documentary", String(localized: "genre_documentary")),
+            ("Animation", String(localized: "genre_animation")),
+            ("Horror", String(localized: "genre_horror")),
+            ("Romance", String(localized: "genre_romance")),
+            ("Thriller", String(localized: "genre_thriller"))
+        ]
+    }
 }
 
 private struct PosterShimmerPlaceholder: View {
-    let width: CGFloat
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(FilmilaColors.surfaceBright)
-            .frame(width: width, height: 72)
-            .overlay {
-                GeometryReader { geo in
-                    LinearGradient(
-                        colors: [
-                            Color.clear,
-                            FilmilaColors.searchPosterShimmerHighlight,
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: geo.size.width * 0.45)
-                    .offset(x: phase * (geo.size.width + geo.size.width * 0.45))
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        HStack(alignment: .center, spacing: Spacing.md) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(FilmilaColors.surfaceBright)
+                .frame(width: FilmListingPosterMetrics.rowWidth, height: FilmListingPosterMetrics.rowHeight)
+            VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(FilmilaColors.surfaceBright)
+                    .frame(height: 12)
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .fill(FilmilaColors.surfaceBright)
+                    .frame(width: 120, height: 10)
             }
-            .onAppear {
-                withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
-                    phase = 1
-                }
+            Spacer(minLength: 0)
+        }
+        .padding(Spacing.md)
+        .background(FilmilaColors.surfaceElevated)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            GeometryReader { geo in
+                LinearGradient(
+                    colors: [
+                        Color.clear,
+                        FilmilaColors.searchPosterShimmerHighlight,
+                        Color.clear
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: geo.size.width * 0.45)
+                .offset(x: phase * (geo.size.width + geo.size.width * 0.45))
             }
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
+                phase = 1
+            }
+        }
     }
 }
 
 struct SearchView: View {
     @StateObject private var vm: SearchViewModel
     @Environment(\.container) private var container
+    @Environment(\.layoutDirection) private var layoutDirection
     @Binding private var externalSearchQuery: String?
 
     @AppStorage("filmila.recentSearches") private var recentSearchesStorage = ""
@@ -205,7 +221,7 @@ struct SearchView: View {
                     trailingAction: clearRecentSearches
                 )
 
-                FlowLayout(spacing: Spacing.sm) {
+                FlowLayout(spacing: Spacing.sm, layoutDirection: layoutDirection) {
                     ForEach(recentSearches, id: \.self) { term in
                         recentSearchChip(term)
                     }
@@ -275,7 +291,7 @@ struct SearchView: View {
     private var loadingRows: some View {
         VStack(spacing: Spacing.sm) {
             ForEach(0 ..< 4, id: \.self) { _ in
-                PosterShimmerPlaceholder(width: UIScreen.main.bounds.width - Spacing.lg * 2)
+                PosterShimmerPlaceholder()
             }
         }
         .padding(.horizontal, Spacing.lg)
@@ -321,9 +337,10 @@ struct SearchView: View {
     }
 }
 
-/// Simple wrapping layout for recent-search chips.
+/// Simple wrapping layout for recent-search chips. Honors RTL packing.
 private struct FlowLayout: Layout {
     var spacing: CGFloat = 8
+    var layoutDirection: LayoutDirection = .leftToRight
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? 0
@@ -346,20 +363,32 @@ private struct FlowLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX
         var y = bounds.minY
         var rowHeight: CGFloat = 0
+        let isRTL = layoutDirection == .rightToLeft
+        var x = isRTL ? bounds.maxX : bounds.minX
 
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > bounds.maxX, x > bounds.minX {
-                x = bounds.minX
-                y += rowHeight + spacing
-                rowHeight = 0
+            if isRTL {
+                if x - size.width < bounds.minX, x < bounds.maxX {
+                    x = bounds.maxX
+                    y += rowHeight + spacing
+                    rowHeight = 0
+                }
+                x -= size.width
+                subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x -= spacing
+            } else {
+                if x + size.width > bounds.maxX, x > bounds.minX {
+                    x = bounds.minX
+                    y += rowHeight + spacing
+                    rowHeight = 0
+                }
+                subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
             }
-            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
             rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
         }
     }
 }

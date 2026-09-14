@@ -118,7 +118,6 @@ struct MainTabView: View {
         .tint(FilmilaColors.accent)
         .environment(\.mainTabSelection, $selectedTab)
         .environment(\.shellNavigation, shellNavigation)
-        .environment(\.layoutDirection, AppLanguage.layoutDirection)
         .onChange(of: auth.session?.user.id) { userId in
             if userId != nil {
                 authSheet = nil
@@ -313,6 +312,7 @@ private struct ProfileLoggedOutView: View {
     MainTabView(container: app)
         .environment(\.container, app)
         .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
+        .environmentObject(AppLanguageController.shared)
         .environmentObject(app.pathMonitor)
         .environmentObject(app.deepLinkHandler)
         .preferredColorScheme(.dark)

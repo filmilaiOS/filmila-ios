@@ -2,19 +2,20 @@ import SwiftUI
 
 struct SearchResultRowCard: View {
     let film: Film
-    var thumbnailSize: CGFloat = 72
 
     var body: some View {
-        HStack(spacing: Spacing.md) {
+        HStack(alignment: .center, spacing: Spacing.md) {
             CachedAsyncImage(url: film.thumbnailUrl)
-                .frame(width: thumbnailSize, height: thumbnailSize)
+                .frame(width: FilmListingPosterMetrics.rowWidth, height: FilmListingPosterMetrics.rowHeight)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(film.displayTitle)
                     .font(.filmilaBodyMedium)
                     .foregroundStyle(FilmilaColors.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
 
                 if let filmmaker = film.publicFilmmakerDisplayName {
                     Text(filmmaker)
@@ -23,15 +24,22 @@ struct SearchResultRowCard: View {
                         .lineLimit(1)
                 }
 
-                if let genre = film.localizedGenreLabel {
-                    Text(genre)
-                        .font(.filmilaCaptionMd)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                } else if let duration = film.formattedDurationForListing {
-                    Text(duration)
-                        .font(.filmilaCaptionMd)
-                        .foregroundStyle(FilmilaColors.textSecondary)
+                HStack(spacing: 6) {
+                    if let genre = film.localizedGenreLabel {
+                        Text(genre)
+                            .lineLimit(1)
+                    }
+                    if film.localizedGenreLabel != nil, film.formattedDurationForListing != nil {
+                        Text("•")
+                            .foregroundStyle(FilmilaColors.textMuted)
+                    }
+                    if let duration = film.formattedDurationForListing {
+                        Text(duration)
+                            .lineLimit(1)
+                    }
                 }
+                .font(.filmilaCaptionMd)
+                .foregroundStyle(FilmilaColors.textSecondary)
             }
 
             Spacer(minLength: 0)

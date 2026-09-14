@@ -6,78 +6,24 @@ struct WatchlistGridCard: View {
     var width: CGFloat
     var onRemove: (() -> Void)?
 
-    private var posterHeight: CGFloat { width * 4 / 3 }
-
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            ZStack {
-                CachedAsyncImage(url: film.thumbnailUrl)
-                    .frame(width: width, height: posterHeight)
-                    .clipped()
-
-                VStack {
-                    Spacer(minLength: 0)
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 44, height: 44)
-                        .background(FilmilaColors.accent)
-                        .clipShape(Circle())
-                        .shadow(color: FilmilaColors.accent.opacity(0.45), radius: 8, y: 4)
-                    Spacer(minLength: 0)
-                }
-                .padding(8)
-            }
-            .frame(width: width, height: posterHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(FilmilaColors.cardBorder, lineWidth: 1)
+            FilmPosterCard(
+                film: film,
+                width: width,
+                averageRating: averageRating
             )
 
-            Text(film.displayTitle)
-                .font(.filmilaBodyMedium)
-                .foregroundStyle(FilmilaColors.textPrimary)
-                .lineLimit(1)
-
-            HStack(spacing: 6) {
-                if let filmmaker = film.publicFilmmakerDisplayName {
-                    Text(filmmaker)
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 0)
-
-                if let averageRating {
-                    HStack(spacing: 3) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(FilmilaColors.accent)
-                        Text(Film.formattedAverageRating(averageRating))
-                            .font(.filmilaCaption)
-                            .foregroundStyle(FilmilaColors.textSecondary)
-                    }
-                }
-
-                if let duration = film.formattedDurationForListing {
-                    Text("•")
+            if let onRemove {
+                Button(action: onRemove) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(FilmilaColors.textMuted)
-                    Text(duration)
-                        .font(.filmilaCaption)
-                        .foregroundStyle(FilmilaColors.textSecondary)
+                        .frame(width: 44, height: 44)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-
-                if let onRemove {
-                    Button(action: onRemove) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(FilmilaColors.textMuted)
-                            .frame(width: 28, height: 28)
-                    }
-                    .buttonStyle(.plain)
-                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(localized: "detail_watchlist_remove")))
             }
         }
         .frame(width: width, alignment: .topLeading)

@@ -6,7 +6,7 @@ struct FilmilaAccentButtonStyle: ButtonStyle {
         configuration.label
             .foregroundStyle(FilmilaColors.textInverse)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
             .background(FilmilaColors.accent)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
@@ -20,7 +20,25 @@ struct FilmilaAccentOutlineButtonStyle: ButtonStyle {
         configuration.label
             .foregroundStyle(FilmilaColors.accent)
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(minHeight: 50)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(FilmilaColors.accent, lineWidth: 1.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+/// Square outline control for compact hero overflow (icon-only watchlist).
+struct FilmilaAccentIconButtonStyle: ButtonStyle {
+    var size: CGFloat = 50
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(FilmilaColors.accent)
+            .frame(width: size, height: size)
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(FilmilaColors.accent, lineWidth: 1.5)

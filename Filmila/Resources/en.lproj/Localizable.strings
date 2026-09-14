@@ -158,7 +158,7 @@
 "profile_tab_ratings" = "Ratings";
 "profile_tab_watchlist" = "Watchlist";
 "search_empty" = "No films found";
-"search_empty_browse_hint" = "Type a query above, or tap Filters to start browsing.";
+"search_empty_browse_hint" = "Type a title, genre, or director above to find films.";
 "search_field_placeholder" = "Search films…";
 "search_field_placeholder_v2" = "Search films, genres, directors…";
 "search_filter_filters" = "Filters";

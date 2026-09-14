@@ -45,7 +45,6 @@ struct AppShellView<Content: View>: View {
                 }
             }
         }
-        .environment(\.layoutDirection, AppLanguage.layoutDirection)
     }
 }
 

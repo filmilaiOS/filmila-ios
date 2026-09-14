@@ -51,11 +51,11 @@ struct FilmHeroView: View {
                     .foregroundStyle(FilmilaColors.textPrimary)
                     .lineLimit(2)
 
-                if let genre = film.genre, !genre.isEmpty {
-                    Text(genre.uppercased())
+                if let genre = film.localizedGenreLabel {
+                    Text(genre)
                         .font(.filmilaLabel)
                         .foregroundStyle(FilmilaColors.accent)
-                        .kerning(1.4)
+                        .kerning(AppLanguage.prefersArabic ? 0 : 1.4)
                 }
 
                 HStack(spacing: Spacing.sm) {

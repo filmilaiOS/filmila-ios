@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var language: AppLanguageController
     @Environment(\.container) private var container
     /// Ensures `restoreSession()` runs at most once for this `RootView` lifetime, even if SwiftUI restarts `.task`.
     @State private var didRunAuthBootstrap = false
@@ -14,6 +15,7 @@ struct RootView: View {
                 // Always mount MainTabView so deep links and payment callbacks are consumed
                 // even when logged out; auth is presented from the drawer / My List sheets.
                 MainTabView(container: container)
+                    .id(language.code)
             }
         }
         .onChange(of: auth.session?.user.id.uuidString) { newValue in
@@ -47,6 +49,7 @@ struct RootView: View {
     RootView()
         .environment(\.container, container)
         .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
+        .environmentObject(AppLanguageController.shared)
         .environmentObject(container.pathMonitor)
         .environmentObject(container.deepLinkHandler)
         .preferredColorScheme(.dark)

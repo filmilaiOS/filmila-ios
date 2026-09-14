@@ -52,7 +52,7 @@ struct MyListLoggedOutView: View {
                                 NavigationLink {
                                     FilmDetailView(filmId: film.id, container: container)
                                 } label: {
-                                    FilmPosterCardWithGenreOverlay(
+                                    FilmPosterCard(
                                         film: film,
                                         width: 130,
                                         averageRating: averageRatingByFilmId[film.id]

@@ -4,13 +4,14 @@ import SwiftUI
 struct FilmilaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
-    @AppStorage("app_preferred_language") private var appPreferredLanguage = "en"
+    @ObservedObject private var language = AppLanguageController.shared
 
     @StateObject private var auth: AuthService
     @StateObject private var networkMonitor: NetworkMonitor
     private let container: LiveAppContainer
 
     init() {
+        LanguageBundleOverride.install()
         let container = LiveAppContainer()
         LiveAppContainer.shared = container
         self.container = container
@@ -22,7 +23,9 @@ struct FilmilaApp: App {
         WindowGroup {
             RootView()
                 .environment(\.container, container)
-                .environment(\.locale, Locale(identifier: appPreferredLanguage == "ar" ? "ar" : "en"))
+                .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.layoutDirection)
+                .environmentObject(language)
                 .environmentObject(auth)
                 .environmentObject(networkMonitor)
                 .environmentObject(container.deepLinkHandler)

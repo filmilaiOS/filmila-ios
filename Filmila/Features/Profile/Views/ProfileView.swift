@@ -29,10 +29,9 @@ private enum ProfileActivityTab: String, CaseIterable, Identifiable {
 
 struct ProfileView: View {
     @EnvironmentObject private var auth: AuthService
+    @EnvironmentObject private var language: AppLanguageController
     @Environment(\.container) private var container
     @Environment(\.openURL) private var openURL
-
-    @AppStorage(AppLanguage.storageKey) private var preferredLanguage = "en"
 
     @State private var selectedTab: ProfileActivityTab = .history
     @State private var historyItems: [ContinueWatchingItem] = []
@@ -135,17 +134,31 @@ struct ProfileView: View {
                         selectedTab = tab
                     }
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: tab.systemImage)
-                            .font(.system(size: 12, weight: .semibold))
-                        Text(tab.title)
-                            .font(.filmilaCaptionMd)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                    Group {
+                        if language.prefersArabic {
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.systemImage)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(tab.title)
+                                    .font(.filmilaLabel)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                            }
+                            .padding(.vertical, 8)
+                        } else {
+                            HStack(spacing: 6) {
+                                Image(systemName: tab.systemImage)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text(tab.title)
+                                    .font(.filmilaCaptionMd)
+                                    .lineLimit(1)
+                            }
+                            .padding(.vertical, 10)
+                        }
                     }
                     .foregroundStyle(selectedTab == tab ? FilmilaColors.textInverse : FilmilaColors.textSecondary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .frame(minHeight: 44)
                     .background(
                         Group {
                             if selectedTab == tab {
@@ -342,7 +355,10 @@ struct ProfileView: View {
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textPrimary)
                 Spacer()
-                Picker("", selection: $preferredLanguage) {
+                Picker("", selection: Binding(
+                    get: { language.code },
+                    set: { language.select($0) }
+                )) {
                     Text(String(localized: "profile_lang_english")).tag("en")
                     Text(String(localized: "profile_lang_arabic")).tag("ar")
                 }
@@ -478,14 +494,16 @@ private struct ProfileHistoryRow: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
             CachedAsyncImage(url: item.film.thumbnailUrl)
-                .frame(width: 56, height: 56)
+                .frame(width: FilmListingPosterMetrics.rowWidth, height: FilmListingPosterMetrics.rowHeight)
+                .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.film.displayTitle)
                     .font(.filmilaBodyMedium)
                     .foregroundStyle(FilmilaColors.textPrimary)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
                 Text(progressLabel)
                     .font(.filmilaCaption)
                     .foregroundStyle(FilmilaColors.textSecondary)
@@ -510,7 +528,8 @@ private struct ProfileHistoryRow: View {
         ProfileView()
     }
     .environment(\.container, container)
-    .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
+        .environmentObject(PreviewContainer.makeSignedInAuthForPreviews())
+        .environmentObject(AppLanguageController.shared)
     .preferredColorScheme(.dark)
 }
 #endif

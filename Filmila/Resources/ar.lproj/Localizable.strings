@@ -158,7 +158,7 @@
 "profile_tab_ratings" = "التقييمات";
 "profile_tab_watchlist" = "قائمة المشاهدة";
 "search_empty" = "لا توجد نتائج";
-"search_empty_browse_hint" = "اكتب استعلامًا أعلاه، أو اضغط على الفلاتر لبدء التصفح.";
+"search_empty_browse_hint" = "اكتب عنوانًا أو نوعًا أو اسم مخرج أعلاه للعثور على الأفلام.";
 "search_field_placeholder" = "ابحث عن الأفلام…";
 "search_field_placeholder_v2" = "ابحث عن أفلام، أنواع، مخرجين…";
 "search_filter_filters" = "فلاتر";

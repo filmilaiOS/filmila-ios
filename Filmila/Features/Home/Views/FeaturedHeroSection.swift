@@ -60,28 +60,8 @@ struct FeaturedHeroSection: View {
                             .padding(.top, 2)
                     }
 
-                    HStack(spacing: Spacing.sm) {
-                        NavigationLink {
-                            FilmDetailView(filmId: film.id, container: container)
-                        } label: {
-                            Label(String(localized: "home_watch_now"), systemImage: "play.fill")
-                                .font(.filmilaBodyMedium)
-                        }
-                        .buttonStyle(FilmilaAccentButtonStyle())
-
-                        Button {
-                            Task { await toggleWatchlist() }
-                        } label: {
-                            Label(
-                                watchlistButtonTitle,
-                                systemImage: isInWatchlist ? "checkmark" : "plus"
-                            )
-                            .font(.filmilaBodyMedium)
-                        }
-                        .buttonStyle(FilmilaAccentOutlineButtonStyle())
-                        .disabled(isTogglingWatchlist)
-                    }
-                    .padding(.top, isCompactHero ? 4 : Spacing.sm)
+                    heroCallToActions
+                        .padding(.top, isCompactHero ? 4 : Spacing.sm)
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.bottom, isCompactHero ? Spacing.md : Spacing.lg)
@@ -93,6 +73,65 @@ struct FeaturedHeroSection: View {
         .task(id: auth.session?.user.id) {
             await refreshWatchlistState()
         }
+    }
+
+    @ViewBuilder
+    private var heroCallToActions: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.sm) {
+                watchNowButton
+                watchlistTitleButton
+            }
+            HStack(spacing: Spacing.sm) {
+                watchNowButton
+                watchlistIconButton
+            }
+            VStack(spacing: Spacing.sm) {
+                watchNowButton
+                watchlistTitleButton
+            }
+        }
+    }
+
+    private var watchNowButton: some View {
+        NavigationLink {
+            FilmDetailView(filmId: film.id, container: container)
+        } label: {
+            Label(String(localized: "home_watch_now"), systemImage: "play.fill")
+                .font(.filmilaBodyMedium)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(FilmilaAccentButtonStyle())
+    }
+
+    private var watchlistTitleButton: some View {
+        Button {
+            Task { await toggleWatchlist() }
+        } label: {
+            Label(
+                watchlistButtonTitle,
+                systemImage: isInWatchlist ? "checkmark" : "plus"
+            )
+            .font(.filmilaBodyMedium)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(FilmilaAccentOutlineButtonStyle())
+        .disabled(isTogglingWatchlist)
+        .accessibilityLabel(Text(watchlistButtonTitle))
+    }
+
+    private var watchlistIconButton: some View {
+        Button {
+            Task { await toggleWatchlist() }
+        } label: {
+            Image(systemName: isInWatchlist ? "checkmark" : "plus")
+                .font(.system(size: 16, weight: .semibold))
+        }
+        .buttonStyle(FilmilaAccentIconButtonStyle())
+        .disabled(isTogglingWatchlist)
+        .accessibilityLabel(Text(watchlistButtonTitle))
     }
 
     private var metadataRow: some View {

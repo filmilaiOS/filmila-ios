@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum FilmListingPosterMetrics {
+    /// Compact list thumbnail (Search / Profile rows). 2:3 portrait.
+    static let rowWidth: CGFloat = 52
+    static var rowHeight: CGFloat { rowWidth * 3 / 2 }
+}
+
 struct FilmPosterCard: View {
     let film: Film
     var width: CGFloat = 130

@@ -15,14 +15,7 @@ struct AppHeaderView: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
             Button(action: onMenuTap) {
-                HStack(spacing: 0) {
-                    Text("Filmila")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(FilmilaColors.textPrimary)
-                    Text(".")
-                        .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(FilmilaColors.accent)
-                }
+                FilmilaWordmark(size: 22)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(String(localized: "app_name")))

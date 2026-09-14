@@ -22,3 +22,20 @@ extension Font {
     static let filmilaAvatarInitial = Font.system(size: 28, weight: .semibold, design: .rounded)
     static let filmilaCapsBadge = Font.system(size: 11, weight: .semibold)
 }
+
+/// Brand mark locked to LTR so the magenta period stays after “Filmila” in Arabic.
+struct FilmilaWordmark: View {
+    var size: CGFloat = 22
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Text("Filmila")
+            Text(".")
+                .foregroundStyle(FilmilaColors.accent)
+        }
+        .font(.system(size: size, weight: .bold))
+        .foregroundStyle(FilmilaColors.textPrimary)
+        .environment(\.layoutDirection, .leftToRight)
+        .flipsForRightToLeftLayoutDirection(false)
+    }
+}
