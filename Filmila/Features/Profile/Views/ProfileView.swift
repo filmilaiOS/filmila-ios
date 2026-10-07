@@ -41,7 +41,7 @@ struct ProfileView: View {
     @State private var isDeletingAccount = false
     @State private var deleteAccountErrorMessage: String?
 
-    private static let privacyPolicyURL = URL(string: "https://filmila.com/privacy")!
+    private static let privacyPolicyURL = URL(string: "https://www.filmila.com/privacy-policy")!
     private static let termsOfServiceURL = URL(string: "https://filmila.com/terms")!
 
     var body: some View {
