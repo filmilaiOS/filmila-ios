@@ -5,6 +5,7 @@ struct PlayerContainerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: PlayerViewModel
+    @State private var isClosing = false
 
     init(film: Film, container: AppContainer, networkMonitor: NetworkMonitor) {
         self.networkMonitor = networkMonitor
@@ -15,7 +16,7 @@ struct PlayerContainerView: View {
         ZStack {
             FilmilaColors.playerChrome.ignoresSafeArea()
 
-            if vm.playerService.player != nil {
+            if !isClosing, vm.playerService.player != nil {
                 VideoPlayerView(service: vm.playerService)
                     .ignoresSafeArea()
             }
@@ -28,7 +29,7 @@ struct PlayerContainerView: View {
             }
             .animation(.easeInOut(duration: 0.22), value: networkMonitor.isConnected)
 
-            if vm.isLoading {
+            if vm.isLoading && !isClosing {
                 ProgressView()
                     .tint(FilmilaColors.textPrimary)
             }
@@ -49,15 +50,11 @@ struct PlayerContainerView: View {
                 .padding(Spacing.lg)
             }
         }
-        // Close sits above AVPlayerViewController in a safe-area inset so taps are not stolen by UIKit video chrome.
-        .safeAreaInset(edge: .top, spacing: 0) {
-            HStack {
-                closeButton
-                Spacer()
-            }
-            .padding(.horizontal, Spacing.sm)
-            .padding(.top, Spacing.xs)
-            .background(Color.clear)
+        .overlay(alignment: .topLeading) {
+            closeButton
+                .padding(.leading, Spacing.sm)
+                .padding(.top, Spacing.xs)
+                .zIndex(10)
         }
         .task {
             PlaybackLogger.log("PlayerContainerView.task START — launching startPlayback()", filmId: vm.filmIdForLogging)
@@ -92,8 +89,10 @@ struct PlayerContainerView: View {
     /// Stop AVFoundation work immediately, then dismiss — do not wait for `onDisappear` alone.
     private func closePlayer() {
         PlaybackLogger.log("PlayerContainerView.closePlayer — cleanup then dismiss", filmId: vm.filmIdForLogging)
-        vm.cleanup()
+        guard !isClosing else { return }
+        isClosing = true
         dismiss()
+        // Releasing AVFoundation is deferred until the closing transition removes its UIKit view.
     }
 }
 
