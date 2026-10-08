@@ -124,8 +124,10 @@ final class HLSPlayerService: ObservableObject {
             filmId: currentFilmId
         )
         newPlayer.play()
-        playbackState = .playing
-        isBuffering = false
+        // readyToPlay means the item is prepared, not that frames have started rendering.
+        // Preserve the buffering state until AVPlayer actually transitions into playback.
+        isBuffering = newPlayer.timeControlStatus != .playing
+        playbackState = isBuffering ? .loading : .playing
         PlaybackLogger.log(
             "startPlayer COMPLETE rate=\(newPlayer.rate) timeControlStatus=\(PlaybackLogger.timeControlStatus(newPlayer.timeControlStatus))",
             filmId: currentFilmId
@@ -179,7 +181,15 @@ final class HLSPlayerService: ObservableObject {
         timeControlStatusObservation = player.observe(\.timeControlStatus, options: [.new, .initial]) { [weak self] observed, change in
             Task { @MainActor in
                 guard let self else { return }
+                guard observed === self.player else { return }
                 let status = observed.timeControlStatus
+                if status == .playing {
+                    self.isBuffering = false
+                    self.playbackState = .playing
+                } else if status == .waitingToPlayAtSpecifiedRate {
+                    self.isBuffering = true
+                    self.playbackState = .loading
+                }
                 PlaybackLogger.log(
                     "AVPlayer.timeControlStatus KVO → \(PlaybackLogger.timeControlStatus(status)) reason=\(PlaybackLogger.waitingReason(observed.reasonForWaitingToPlay)) (was=\(change.oldValue.map { PlaybackLogger.timeControlStatus($0) } ?? "nil"))",
                     filmId: self.currentFilmId
