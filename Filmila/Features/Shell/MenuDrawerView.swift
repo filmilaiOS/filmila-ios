@@ -30,7 +30,9 @@ struct MenuDrawerView: View {
 
                     browseSection
 
+#if DEBUG
                     submitFilmCard
+#endif
 
                     footerSection
                 }
@@ -91,9 +93,11 @@ struct MenuDrawerView: View {
             drawerLink(String(localized: "shell_browse_my_list")) {
                 shellNavigation.navigateBrowse(.myList)
             }
+#if DEBUG
             drawerLink(String(localized: "tab_community")) {
                 shellNavigation.navigateBrowse(.community)
             }
+#endif
         }
     }
 

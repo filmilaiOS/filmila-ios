@@ -39,7 +39,9 @@ struct FilmDetailView: View {
                         }
                         descriptionSection(film: film)
                         ratingReviewsSection
+#if DEBUG
                         commentsSection
+#endif
                     }
                     .padding(.bottom, Spacing.xxl)
                 }
