@@ -61,9 +61,9 @@
 "detail_title" = "Film";
 "detail_unavailable_body" = "This film could not be loaded.";
 "detail_unavailable_title" = "Film unavailable";
-"detail_locked_title" = "This film isn't in your library yet.";
-"detail_locked_guest_body" = "If you've already accessed this film on filmila.com, sign in here with the same account to watch.";
-"detail_locked_signed_in_body" = "You can get this film on filmila.com, then return to the app and watch with the same account.";
+"detail_locked_title" = "This film isn't available on your account yet.";
+"detail_locked_guest_body" = "Sign in to check whether this film is available on your account.";
+"detail_locked_signed_in_body" = "If you already have access to this film, make sure you're signed in with the correct account.";
 "detail_watch" = "Watch";
 "detail_watchlist_add" = "Watchlist";
 "detail_watchlist_remove" = "In watchlist";
