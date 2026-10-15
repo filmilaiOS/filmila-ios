@@ -1,4 +1,4 @@
-"app_name" = "فيلميلا";
+"app_name" = "فلميلا";
 "auth_check_email_register_body" = "أرسلنا رابط التأكيد. افتحه لإكمال إنشاء حسابك.";
 "auth_check_email_reset_body" = "إذا كان هناك حساب لهذا العنوان، ستصلك رسالة لإعادة تعيين كلمة المرور.";
 "auth_check_email_title" = "تحقق من بريدك";
@@ -17,7 +17,7 @@
 "auth_forgot_password" = "نسيت كلمة المرور؟";
 "auth_full_name" = "الاسم الكامل";
 "auth_password" = "كلمة المرور";
-"auth_register_subtitle" = "انضم إلى فيلميلا لمشاهدة وحفظ الأفلام القصيرة السعودية.";
+"auth_register_subtitle" = "انضم إلى فلميلا لمشاهدة وحفظ الأفلام القصيرة السعودية.";
 "auth_register_title" = "إنشاء حساب";
 "auth_sign_in_subtitle" = "مرحبًا بعودتك إلى فيلميلا.";
 "auth_send_reset" = "إرسال رابط الاستعادة";
@@ -61,9 +61,9 @@
 "detail_title" = "فيلم";
 "detail_unavailable_body" = "تعذر تحميل هذا الفيلم.";
 "detail_unavailable_title" = "الفيلم غير متوفر";
-"detail_locked_title" = "هذا الفيلم غير متاح للمشاهدة حاليًا.";
-"detail_locked_guest_body" = "سجّل الدخول بحساب فيلميلا للتحقق مما إذا كان هذا الفيلم متاحًا لك بالفعل.";
-"detail_locked_signed_in_body" = "هذا الفيلم غير متاح للمشاهدة بهذا الحساب.";
+"detail_locked_title" = "هذا الفيلم غير متاح لحسابك حاليًا";
+"detail_locked_guest_body" = "سجّل الدخول للتحقق من إمكانية مشاهدة هذا الفيلم باستخدام حسابك.";
+"detail_locked_signed_in_body" = "إذا كان لديك حق مشاهدة هذا الفيلم مسبقًا، فتأكد من تسجيل الدخول بالحساب الصحيح.";
 "detail_watch" = "مشاهدة";
 "detail_watchlist_add" = "قائمة المشاهدة";
 "detail_watchlist_remove" = "في القائمة";
