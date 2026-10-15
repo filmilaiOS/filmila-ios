@@ -61,9 +61,9 @@
 "detail_title" = "فيلم";
 "detail_unavailable_body" = "تعذر تحميل هذا الفيلم.";
 "detail_unavailable_title" = "الفيلم غير متوفر";
-"detail_locked_title" = "هذا الفيلم غير مضاف إلى حسابك بعد";
-"detail_locked_guest_body" = "إذا سبق أن حصلت على الفيلم عبر filmila.com، سجّل الدخول هنا بالحساب نفسه لمشاهدته.";
-"detail_locked_signed_in_body" = "يمكنك الحصول على الفيلم عبر filmila.com، ثم العودة إلى التطبيق ومشاهدته بالحساب نفسه.";
+"detail_locked_title" = "هذا الفيلم غير متاح لحسابك حاليًا";
+"detail_locked_guest_body" = "سجّل الدخول للتحقق من إمكانية مشاهدة هذا الفيلم باستخدام حسابك.";
+"detail_locked_signed_in_body" = "إذا كان لديك حق مشاهدة هذا الفيلم مسبقًا، فتأكد من تسجيل الدخول بالحساب الصحيح.";
 "detail_watch" = "مشاهدة";
 "detail_watchlist_add" = "قائمة المشاهدة";
 "detail_watchlist_remove" = "في القائمة";
