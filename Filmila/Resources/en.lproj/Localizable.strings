@@ -1,5 +1,5 @@
 "app_name" = "Filmila";
-"auth_check_email_register_body" = "We sent a confirmation link. Open it to finish creating your account.";
+"auth_check_email_register_body" = "We sent a confirmation link. Open it to finish creating your account. After confirming your email, return to the Filmila app and sign in to enjoy the films.";
 "auth_check_email_reset_body" = "If an account exists for that address, you will receive a link to reset your password.";
 "auth_check_email_title" = "Check your email";
 "auth_confirm_password" = "Confirm password";
