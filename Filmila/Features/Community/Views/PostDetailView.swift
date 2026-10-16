@@ -3,6 +3,9 @@ import SwiftUI
 struct PostDetailView: View {
     @StateObject private var vm: PostDetailViewModel
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthService
+    @State private var commentDraft = ""
+    @FocusState private var isCommentFocused: Bool
 
     init(postId: Int, container: AppContainer) {
         _vm = StateObject(wrappedValue: PostDetailViewModel(postId: postId, container: container))
@@ -22,6 +25,7 @@ struct PostDetailView: View {
                         }
                         postBody(post)
                         commentsSection
+                        commentComposer
                     }
                     .padding(.horizontal, Spacing.lg)
                     .padding(.bottom, Spacing.xxl)
@@ -91,6 +95,60 @@ struct PostDetailView: View {
             .foregroundStyle(FilmilaColors.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .lineSpacing(4)
+    }
+
+    private var commentComposer: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            if auth.session != nil {
+                Text(String(localized: "community_write_comment"))
+                    .font(.filmilaBodyMedium)
+                    .foregroundStyle(FilmilaColors.textPrimary)
+                TextEditor(text: $commentDraft)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 88, maxHeight: 140)
+                    .padding(8)
+                    .background(FilmilaColors.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(FilmilaColors.textPrimary)
+                    .focused($isCommentFocused)
+                    .accessibilityLabel(String(localized: "community_write_comment"))
+                    .disabled(vm.isSubmittingComment)
+                HStack {
+                    Text("\\(commentDraft.count)/2000")
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textMuted)
+                    Spacer()
+                    Button {
+                        Task {
+                            let submitted = await vm.submitComment(commentDraft)
+                            if submitted {
+                                commentDraft = ""
+                                isCommentFocused = false
+                            }
+                        }
+                    } label: {
+                        if vm.isSubmittingComment {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text(String(localized: "community_send_comment"))
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(FilmilaColors.accent)
+                    .disabled(vm.isSubmittingComment || commentDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || commentDraft.count > 2000)
+                }
+                if let error = vm.commentError {
+                    Text(error)
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.destructive)
+                }
+            } else {
+                Text(String(localized: "community_sign_in_to_comment"))
+                    .font(.filmilaBody)
+                    .foregroundStyle(FilmilaColors.textSecondary)
+            }
+        }
+        .padding(.top, Spacing.md)
     }
 
     private var commentsSection: some View {
