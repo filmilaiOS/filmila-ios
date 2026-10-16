@@ -415,6 +415,14 @@ struct ProfileView: View {
 
             settingsDivider
 
+            NavigationLink {
+                BlockedUsersView()
+            } label: {
+                settingsRowLabel(String(localized: "safety_blocked_users"))
+            }
+
+            settingsDivider
+
             settingsButton(String(localized: "profile_privacy")) {
                 openURL(Self.privacyPolicyURL)
             }
