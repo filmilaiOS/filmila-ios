@@ -104,15 +104,17 @@ struct CommunityFeedView: View {
         } else {
             LazyVStack(spacing: Spacing.md) {
                 ForEach(vm.posts) { post in
-                    NavigationLink {
-                        PostDetailView(postId: post.id, container: container)
-                    } label: {
-                        CommunityPostCard(
-                            post: post,
-                            badgeColor: badgeColor(for: post)
-                        )
+                    HStack(alignment: .top, spacing: 0) {
+                        NavigationLink {
+                            PostDetailView(postId: post.id, container: container)
+                        } label: {
+                            CommunityPostCard(post: post, badgeColor: badgeColor(for: post))
+                        }
+                        .buttonStyle(.plain)
+                        ForumSafetyMenu(postId: post.id, commentId: nil, authorId: post.authorId) {
+                            Task { await vm.reloadPosts() }
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, Spacing.lg)
