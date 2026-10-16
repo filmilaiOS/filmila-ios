@@ -2,6 +2,7 @@ import SwiftUI
 
 struct PostDetailView: View {
     @StateObject private var vm: PostDetailViewModel
+    @Environment(\.dismiss) private var dismiss
 
     init(postId: Int, container: AppContainer) {
         _vm = StateObject(wrappedValue: PostDetailViewModel(postId: postId, container: container))
@@ -12,7 +13,13 @@ struct PostDetailView: View {
             if let post = vm.post {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Spacing.lg) {
-                        postHeader(post)
+                        HStack(alignment: .top) {
+                            postHeader(post)
+                            Spacer(minLength: 0)
+                            ForumSafetyMenu(postId: post.id, commentId: nil, authorId: post.authorId) {
+                                dismiss()
+                            }
+                        }
                         postBody(post)
                         commentsSection
                     }
@@ -122,7 +129,11 @@ private struct ForumCommentRow: View {
                 }
             }
 
-            Text(comment.content)
+            HStack(alignment: .top) {
+                Text(comment.content)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ForumSafetyMenu(postId: nil, commentId: comment.id, authorId: comment.authorId)
+            }
                 .font(.filmilaBody)
                 .foregroundStyle(FilmilaColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
