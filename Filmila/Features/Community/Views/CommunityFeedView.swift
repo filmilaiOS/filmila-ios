@@ -40,17 +40,52 @@ struct CommunityFeedView: View {
 
     private var communityHeader: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(.white.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                Spacer()
+
+                Image(systemName: "film.stack")
+                    .font(.system(size: 34, weight: .light))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+
+            Spacer(minLength: 8)
+
             Text(communityLocalized("community_title"))
-                .font(.custom("Georgia-Bold", size: 28))
-                .foregroundStyle(FilmilaColors.textPrimary)
-                .lineSpacing(4)
+                .font(.system(size: 29, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.leading)
 
             Text(communityLocalized("community_header_subtitle"))
                 .font(.filmilaBody)
-                .foregroundStyle(FilmilaColors.textSecondary)
+                .foregroundStyle(.white.opacity(0.85))
                 .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Spacing.lg)
+        .frame(maxWidth: .infinity, minHeight: 188, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [
+                    FilmilaColors.accent.opacity(0.78),
+                    Color(red: 0.33, green: 0.13, blue: 0.46),
+                    FilmilaColors.surface
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+        }
         .padding(.horizontal, Spacing.lg)
         .padding(.top, Spacing.lg)
     }
