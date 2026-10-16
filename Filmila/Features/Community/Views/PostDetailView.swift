@@ -114,7 +114,7 @@ struct PostDetailView: View {
                     .accessibilityLabel(String(localized: "community_write_comment"))
                     .disabled(vm.isSubmittingComment)
                 HStack {
-                    Text("\\(commentDraft.count)/2000")
+                    Text("\(commentDraft.count)/2000")
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textMuted)
                     Spacer()
