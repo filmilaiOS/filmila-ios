@@ -15,7 +15,15 @@ struct AppHeaderView: View {
     var body: some View {
         HStack(spacing: Spacing.md) {
             Button(action: onMenuTap) {
-                FilmilaWordmark(size: 22)
+                HStack(spacing: 7) {
+                    Image("FilmilaLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 23, height: 27)
+                        .accessibilityHidden(true)
+                    FilmilaWordmark(size: 22)
+                }
+                .environment(\.layoutDirection, .leftToRight)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(Text(String(localized: "app_name")))
