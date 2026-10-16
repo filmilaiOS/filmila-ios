@@ -292,6 +292,7 @@ private struct CommunityAllCategoryCard: View {
                 .padding(Spacing.md)
             }
             .frame(width: 160, height: 120)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -322,8 +323,9 @@ private struct CommunityCategoryCard: View {
             ZStack(alignment: .bottomLeading) {
                 if let backgroundImageURL {
                     CachedAsyncImage(url: backgroundImageURL)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(width: 160, height: 120)
                         .clipped()
+                        .allowsHitTesting(false)
                 } else {
                     category.displayColor
                 }
@@ -354,6 +356,7 @@ private struct CommunityCategoryCard: View {
                 .padding(Spacing.md)
             }
             .frame(width: 160, height: 120)
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
