@@ -4,9 +4,7 @@ struct CommunityFeedView: View {
     @StateObject private var vm: CommunityFeedViewModel
     @Environment(\.container) private var container
     @Environment(\.locale) private var locale
-    @Environment(\.layoutDirection) private var layoutDirection
 
-    @State private var categoryScrollIndex = 0
     @State private var cachedPostCountsByCategory: [Int: Int] = [:]
     @State private var cachedAllPostsCount: Int = 0
 
@@ -93,7 +91,10 @@ struct CommunityFeedView: View {
     }
 
     private var categoryRow: some View {
-        ScrollViewReader { proxy in
+        // A vertical ScrollView can propose an unconstrained width to its content.
+        // Give the nested horizontal scroller the actual screen-width viewport,
+        // otherwise it may size itself to all cards and have nothing to scroll.
+        GeometryReader { geometry in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Spacing.md) {
                     CommunityAllCategoryCard(
@@ -104,7 +105,6 @@ struct CommunityFeedView: View {
                     ) {
                         Task { await vm.selectCategory(nil) }
                     }
-                    .id("community-all")
 
                     ForEach(vm.categories) { category in
                         CommunityCategoryCard(
@@ -115,35 +115,14 @@ struct CommunityFeedView: View {
                         ) {
                             Task { await vm.selectCategory(category.id) }
                         }
-                        .id("community-category-\(category.id)")
                     }
                 }
                 .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, 8)
             }
-            // Keep native horizontal scrolling. A directional swipe fallback handles
-            // devices where the nested vertical scroll view captures the gesture.
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 24)
-                    .onEnded { value in
-                        let dx = value.translation.width
-                        let dy = value.translation.height
-                        guard abs(dx) > abs(dy) * 1.5 else { return }
-                        let movingForward = layoutDirection == .rightToLeft ? dx > 0 : dx < 0
-                        let nextIndex = min(
-                            max(categoryScrollIndex + (movingForward ? 1 : -1), 0),
-                            vm.categories.count
-                        )
-                        guard nextIndex != categoryScrollIndex else { return }
-                        categoryScrollIndex = nextIndex
-                        let target = nextIndex == 0
-                            ? "community-all"
-                            : "community-category-\(vm.categories[nextIndex - 1].id)"
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            proxy.scrollTo(target, anchor: .center)
-                        }
-                    }
-            )
+            .frame(width: geometry.size.width, height: 136)
         }
+        .frame(height: 136)
     }
 
     @ViewBuilder
