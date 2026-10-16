@@ -232,3 +232,7 @@
 "community_comment_empty_error" = "Write a comment before posting.";
 "community_comment_length_error" = "Comment is too long (2,000 characters max).";
 "community_comment_not_allowed" = "This account cannot post comments.";
+
+"community_delete_comment" = "Delete comment";
+"community_delete_comment_confirm" = "Delete your comment?";
+"community_cancel" = "Cancel";
