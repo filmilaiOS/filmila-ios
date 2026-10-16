@@ -225,3 +225,10 @@
 "safety_sign_in_required" = "سجّل الدخول أولًا";
 "safety_cannot_block_self" = "لا يمكنك حظر حسابك";
 "safety_unknown_user" = "مستخدم فلميلا";
+
+"community_write_comment" = "اكتب تعليقك";
+"community_send_comment" = "نشر التعليق";
+"community_sign_in_to_comment" = "سجّل الدخول للتعليق على المنشور.";
+"community_comment_empty_error" = "اكتب تعليقًا قبل النشر.";
+"community_comment_length_error" = "التعليق طويل جدًا (الحد 2000 حرف).";
+"community_comment_not_allowed" = "هذا الحساب غير مخوّل للتعليق.";
