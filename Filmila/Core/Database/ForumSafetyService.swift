@@ -41,18 +41,28 @@ final class ForumSafetyService {
     func blockedUsers() async throws -> [ForumBlockedUser] {
         let ids = try await blockedIds()
         guard !ids.isEmpty else { return [] }
+
+        // A missing or inaccessible profile must not hide a saved block.
+        var names: [UUID: String] = [:]
         struct ProfileRow: Decodable {
             let id: UUID
             let display_name: String?
-            let full_name: String?
         }
-        let rows: [ProfileRow] = try await client.from("profiles")
-            .select("id,display_name,full_name")
-            .in("id", values: ids.map(\.uuidString))
-            .execute().value
-        let names = Dictionary(uniqueKeysWithValues: rows.map {
-            ($0.id, $0.display_name ?? $0.full_name ?? String(localized: "safety_unknown_user"))
-        })
+        do {
+            let rows: [ProfileRow] = try await client.from("profiles")
+                .select("id,display_name")
+                .in("id", values: ids.map(\.uuidString))
+                .execute().value
+            for row in rows {
+                if let name = row.display_name, !name.isEmpty {
+                    names[row.id] = name
+                }
+            }
+        } catch {
+            // Keep the block list usable even when profile lookup fails.
+            print("[FilmilaSafety] Blocked profile lookup failed: \(error)")
+        }
+
         return ids.sorted { $0.uuidString < $1.uuidString }.map {
             ForumBlockedUser(id: $0, displayName: names[$0] ?? String(localized: "safety_unknown_user"))
         }
