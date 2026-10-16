@@ -36,7 +36,9 @@ final class LiveForumRepository: ForumRepositoryProtocol {
             q = q.eq("category_id", value: categoryId)
         }
 
-        return try await q.order("created_at", ascending: false).execute().value
+        let posts: [ForumPost] = try await q.order("created_at", ascending: false).execute().value
+        let blocked = (try? await ForumSafetyService.shared.blockedIds()) ?? []
+        return posts.filter { $0.authorId.map { !blocked.contains($0) } ?? true }
     }
 
     func fetchPost(id: Int) async throws -> ForumPost {
@@ -53,16 +55,20 @@ final class LiveForumRepository: ForumRepositoryProtocol {
         guard let post = rows.first else {
             throw ForumRepositoryError.postNotFound
         }
+        let blocked = (try? await ForumSafetyService.shared.blockedIds()) ?? []
+        guard post.authorId.map({ !blocked.contains($0) }) ?? true else { throw ForumRepositoryError.postNotFound }
         return post
     }
 
     func fetchComments(postId: Int) async throws -> [ForumComment] {
-        try await client
+        let comments: [ForumComment] = try await client
             .from("forum_comments")
-            .select("id,post_id,content,author_display_name,created_at")
+            .select("id,post_id,content,author_id,author_display_name,created_at")
             .eq("post_id", value: postId)
             .order("created_at", ascending: true)
             .execute()
             .value
+        let blocked = (try? await ForumSafetyService.shared.blockedIds()) ?? []
+        return comments.filter { $0.authorId.map { !blocked.contains($0) } ?? true }
     }
 }

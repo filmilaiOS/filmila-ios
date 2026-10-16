@@ -207,3 +207,21 @@
 "community_post_no_content" = "لا يوجد محتوى.";
 "community_comments_heading" = "التعليقات";
 "community_comments_empty" = "لا توجد تعليقات بعد.";
+
+"safety_report" = "إبلاغ عن المحتوى";
+"safety_block" = "حظر المستخدم";
+"safety_unblock" = "إلغاء الحظر";
+"safety_blocked_users" = "المستخدمون المحظورون";
+"safety_no_blocked" = "لا يوجد مستخدمون محظورون.";
+"safety_title" = "مجتمع فلميلا";
+"safety_report_reason" = "سبب البلاغ";
+"safety_reason_harassment" = "مضايقة أو تنمر";
+"safety_reason_hate" = "خطاب كراهية";
+"safety_reason_spam" = "محتوى مزعج";
+"safety_reason_violence" = "عنف";
+"safety_reason_other" = "سبب آخر";
+"safety_report_success" = "تم إرسال البلاغ";
+"safety_block_success" = "تم حظر المستخدم";
+"safety_sign_in_required" = "سجّل الدخول أولًا";
+"safety_cannot_block_self" = "لا يمكنك حظر حسابك";
+"safety_unknown_user" = "مستخدم فلميلا";

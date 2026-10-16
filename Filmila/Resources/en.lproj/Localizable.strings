@@ -207,3 +207,21 @@
 "community_post_no_content" = "No content.";
 "community_comments_heading" = "Comments";
 "community_comments_empty" = "No comments yet.";
+
+"safety_report" = "Report content";
+"safety_block" = "Block user";
+"safety_unblock" = "Unblock";
+"safety_blocked_users" = "Blocked users";
+"safety_no_blocked" = "No blocked users.";
+"safety_title" = "Filmila Hub";
+"safety_report_reason" = "Why are you reporting this?";
+"safety_reason_harassment" = "Harassment or bullying";
+"safety_reason_hate" = "Hate speech";
+"safety_reason_spam" = "Spam";
+"safety_reason_violence" = "Violence";
+"safety_reason_other" = "Other";
+"safety_report_success" = "Report submitted";
+"safety_block_success" = "User blocked";
+"safety_sign_in_required" = "Please sign in first";
+"safety_cannot_block_self" = "You cannot block yourself";
+"safety_unknown_user" = "Filmila user";
