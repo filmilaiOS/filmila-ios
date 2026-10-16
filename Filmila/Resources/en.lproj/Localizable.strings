@@ -225,3 +225,10 @@
 "safety_sign_in_required" = "Please sign in first";
 "safety_cannot_block_self" = "You cannot block yourself";
 "safety_unknown_user" = "Filmila user";
+
+"community_write_comment" = "Write a comment";
+"community_send_comment" = "Post comment";
+"community_sign_in_to_comment" = "Sign in to comment on this post.";
+"community_comment_empty_error" = "Write a comment before posting.";
+"community_comment_length_error" = "Comment is too long (2,000 characters max).";
+"community_comment_not_allowed" = "This account cannot post comments.";
