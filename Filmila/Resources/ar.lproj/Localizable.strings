@@ -232,3 +232,7 @@
 "community_comment_empty_error" = "اكتب تعليقًا قبل النشر.";
 "community_comment_length_error" = "التعليق طويل جدًا (الحد 2000 حرف).";
 "community_comment_not_allowed" = "هذا الحساب غير مخوّل للتعليق.";
+
+"community_delete_comment" = "حذف التعليق";
+"community_delete_comment_confirm" = "هل تريد حذف تعليقك؟";
+"community_cancel" = "إلغاء";
