@@ -193,9 +193,9 @@
 "shell_menu_open" = "فتح القائمة";
 "shell_menu_close" = "إغلاق القائمة";
 "shell_coming_soon_body" = "قريبًا.";
-"community_title" = "مجتمع صُنّاع الأفلام";
+"community_title" = "مجتمع فلميلا";
 "community_header_title" = "مجتمع صُنّاع الأفلام";
-"community_header_subtitle" = "ناقش الأفلام مع صانعي السينما";
+"community_header_subtitle" = "مساحة لعشاق الأفلام وصنّاعها. ناقش، شارك، واكتشف آراء المجتمع.";
 "community_posts_label" = "منشور";
 "community_post_count_format" = "%lld منشور";
 "community_filter_all" = "الكل";

@@ -193,9 +193,9 @@
 "shell_menu_open" = "Open menu";
 "shell_menu_close" = "Close menu";
 "shell_coming_soon_body" = "Coming soon.";
-"community_title" = "Community";
+"community_title" = "Filmila Community";
 "community_header_title" = "Filmmakers Community";
-"community_header_subtitle" = "Discuss films with cinema creators";
+"community_header_subtitle" = "A space for film lovers and creators. Discuss, share, and discover new perspectives.";
 "community_posts_label" = "posts";
 "community_post_count_format" = "%lld posts";
 "community_filter_all" = "All";

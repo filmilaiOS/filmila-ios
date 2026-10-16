@@ -50,6 +50,7 @@ struct ProfileView: View {
                 profileHeaderCard
                 activityTabBar
                 activityContent
+                communityEntrySection
                 accountManagementSection
             }
             .padding(.horizontal, Spacing.lg)
@@ -251,6 +252,49 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.xl)
+    }
+
+    private var communityEntrySection: some View {
+        NavigationLink {
+            CommunityFeedView(container: container)
+        } label: {
+            HStack(spacing: Spacing.md) {
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(FilmilaColors.accent)
+                    .frame(width: 52, height: 52)
+                    .background(FilmilaColors.accent.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(String(localized: "community_title"))
+                        .font(.filmilaBodyMedium)
+                        .foregroundStyle(FilmilaColors.textPrimary)
+                    Text(String(localized: "community_header_subtitle"))
+                        .font(.filmilaCaption)
+                        .foregroundStyle(FilmilaColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.forward")
+                    .font(.filmilaCapsBadge)
+                    .foregroundStyle(FilmilaColors.textMuted)
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(FilmilaColors.surface)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(FilmilaColors.accent.opacity(0.3), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("profile_community_entry")
     }
 
     private var accountManagementSection: some View {
