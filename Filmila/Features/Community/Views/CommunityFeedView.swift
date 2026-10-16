@@ -115,7 +115,7 @@ struct CommunityFeedView: View {
                         ) {
                             Task { await vm.selectCategory(category.id) }
                         }
-                        .id("community-category-\\(category.id)")
+                        .id("community-category-\(category.id)")
                     }
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -137,7 +137,7 @@ struct CommunityFeedView: View {
                         categoryScrollIndex = nextIndex
                         let target = nextIndex == 0
                             ? "community-all"
-                            : "community-category-\\(vm.categories[nextIndex - 1].id)"
+                            : "community-category-\(vm.categories[nextIndex - 1].id)"
                         withAnimation(.easeInOut(duration: 0.25)) {
                             proxy.scrollTo(target, anchor: .center)
                         }
