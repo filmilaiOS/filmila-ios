@@ -32,6 +32,18 @@ final class PostDetailViewModel: ObservableObject {
         }
     }
 
+    func deleteComment(id: Int) async -> Bool {
+        commentError = nil
+        do {
+            try await repo.deleteComment(id: id)
+            comments = try await repo.fetchComments(postId: postId)
+            return true
+        } catch {
+            commentError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return false
+        }
+    }
+
     func load() async {
         isLoading = true
         errorMessage = nil
