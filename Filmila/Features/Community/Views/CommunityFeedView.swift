@@ -256,8 +256,7 @@ private struct CommunityAllCategoryCard: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            ZStack(alignment: .bottomLeading) {
+        ZStack(alignment: .bottomLeading) {
                 LinearGradient(
                     colors: [
                         FilmilaColors.accent.opacity(isSelected ? 0.55 : 0.4),
@@ -302,8 +301,9 @@ private struct CommunityAllCategoryCard: View {
                     )
             }
             .shadow(color: Color.black.opacity(isSelected ? 0.45 : 0.35), radius: isSelected ? 10 : 8, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onTapGesture(perform: action)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -319,8 +319,7 @@ private struct CommunityCategoryCard: View {
     }
 
     var body: some View {
-        Button(action: action) {
-            ZStack(alignment: .bottomLeading) {
+        ZStack(alignment: .bottomLeading) {
                 if let backgroundImageURL {
                     CachedAsyncImage(url: backgroundImageURL)
                         .frame(width: 160, height: 120)
@@ -366,8 +365,9 @@ private struct CommunityCategoryCard: View {
                     )
             }
             .shadow(color: Color.black.opacity(isSelected ? 0.45 : 0.35), radius: isSelected ? 10 : 8, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onTapGesture(perform: action)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
