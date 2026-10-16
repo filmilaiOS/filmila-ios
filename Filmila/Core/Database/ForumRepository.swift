@@ -7,6 +7,7 @@ protocol ForumRepositoryProtocol: AnyObject {
     func fetchPost(id: Int) async throws -> ForumPost
     func fetchComments(postId: Int) async throws -> [ForumComment]
     func createComment(postId: Int, content: String) async throws
+    func deleteComment(id: Int) async throws
 }
 
 enum ForumRepositoryError: Error {
@@ -98,6 +99,16 @@ final class LiveForumRepository: ForumRepositoryProtocol {
             author_display_name: profile.display_name ?? fallback
         )
         try await client.from("forum_comments").insert(payload).execute()
+    }
+
+    func deleteComment(id: Int) async throws {
+        let userId = try await client.auth.session.user.id
+        // Both the request filter and Supabase RLS must enforce ownership.
+        try await client.from("forum_comments")
+            .delete()
+            .eq("id", value: id)
+            .eq("author_id", value: userId.uuidString)
+            .execute()
     }
 
     func fetchComments(postId: Int) async throws -> [ForumComment] {

@@ -295,6 +295,7 @@ private final class PreviewNotificationsRepository: NotificationsRepositoryProto
 
 private final class PreviewForumRepository: ForumRepositoryProtocol {
     func createComment(postId: Int, content: String) async throws {}
+    func deleteComment(id: Int) async throws {}
 
     private let categories: [ForumCategory] = [
         ForumCategory(id: 1, name: "General", color: "#EF4444"),

@@ -6,6 +6,8 @@ struct PostDetailView: View {
     @EnvironmentObject private var auth: AuthService
     @State private var commentDraft = ""
     @FocusState private var isCommentFocused: Bool
+    @State private var commentToDelete: Int?
+    @State private var deleteError: String?
 
     init(postId: Int, container: AppContainer) {
         _vm = StateObject(wrappedValue: PostDetailViewModel(postId: postId, container: container))
@@ -53,6 +55,35 @@ struct PostDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await vm.load()
+        }
+        .confirmationDialog(
+            String(localized: "community_delete_comment_confirm"),
+            isPresented: Binding(
+                get: { commentToDelete != nil },
+                set: { if !$0 { commentToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(String(localized: "community_delete_comment"), role: .destructive) {
+                guard let id = commentToDelete else { return }
+                commentToDelete = nil
+                Task {
+                    if !(await vm.deleteComment(id: id)) {
+                        deleteError = vm.commentError
+                    }
+                }
+            }
+            Button(String(localized: "community_cancel"), role: .cancel) {
+                commentToDelete = nil
+            }
+        }
+        .alert(String(localized: "safety_title"), isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button(String(localized: "profile_ok"), role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "")
         }
     }
 
@@ -163,7 +194,7 @@ struct PostDetailView: View {
                     .foregroundStyle(FilmilaColors.textSecondary)
             } else {
                 ForEach(vm.comments) { comment in
-                    ForumCommentRow(comment: comment)
+                    ForumCommentRow(comment: comment, currentUserId: auth.session?.user.id) { commentToDelete = comment.id }
                 }
             }
         }
@@ -172,6 +203,8 @@ struct PostDetailView: View {
 
 private struct ForumCommentRow: View {
     let comment: ForumComment
+    let currentUserId: UUID?
+    let onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -190,7 +223,19 @@ private struct ForumCommentRow: View {
             HStack(alignment: .top) {
                 Text(comment.content)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                ForumSafetyMenu(postId: nil, commentId: comment.id, authorId: comment.authorId)
+                if let currentUserId, comment.authorId == currentUserId {
+                    Menu {
+                        Button(role: .destructive, action: onDelete) {
+                            Label(String(localized: "community_delete_comment"), systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .frame(width: 44, height: 44)
+                            .foregroundStyle(FilmilaColors.textSecondary)
+                    }
+                } else {
+                    ForumSafetyMenu(postId: nil, commentId: comment.id, authorId: comment.authorId)
+                }
             }
                 .font(.filmilaBody)
                 .foregroundStyle(FilmilaColors.textSecondary)
