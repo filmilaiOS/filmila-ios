@@ -24,7 +24,7 @@ struct HomeTopTabsBar: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(HomeBrowseTab.allCases) { tab in
+                ForEach([HomeBrowseTab.films, .genres]) { tab in
                     let isSelected = selected == tab
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
