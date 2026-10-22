@@ -54,18 +54,18 @@ struct FilmDetailView: View {
                 }) {
                     ratingSheet
                 }
-                .alert("Delete comment?", isPresented: Binding(
+                .alert(String(localized: "community_delete_comment_confirm"), isPresented: Binding(
                     get: { commentPendingDeletion != nil },
                     set: { if !$0 { commentPendingDeletion = nil } }
                 )) {
-                    Button("Cancel", role: .cancel) { commentPendingDeletion = nil }
-                    Button("Delete", role: .destructive) {
+                    Button(String(localized: "common_cancel"), role: .cancel) { commentPendingDeletion = nil }
+                    Button(String(localized: "detail_comment_delete"), role: .destructive) {
                         guard let id = commentPendingDeletion else { return }
                         commentPendingDeletion = nil
                         Task { await vm.deleteComment(id: id) }
                     }
                 } message: {
-                    Text("This comment will be permanently removed.")
+                    Text(String(localized: "detail_comment_delete_warning"))
                 }
                 .onChange(of: scenePhase) { newPhase in
                     guard newPhase == .active else { return }
