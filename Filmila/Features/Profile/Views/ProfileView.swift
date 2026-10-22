@@ -129,7 +129,7 @@ struct ProfileView: View {
 
     private var activityTabBar: some View {
         HStack(spacing: 4) {
-            ForEach(ProfileActivityTab.allCases) { tab in
+            ForEach([ProfileActivityTab.history, .watchlist]) { tab in
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         selectedTab = tab
