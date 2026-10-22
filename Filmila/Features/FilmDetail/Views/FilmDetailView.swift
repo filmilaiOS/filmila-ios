@@ -4,6 +4,7 @@ struct FilmDetailView: View {
     private let container: AppContainer
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var networkMonitor: NetworkMonitor
     @EnvironmentObject private var auth: AuthService
     @Environment(\.shellNavigation) private var shellNavigation
@@ -173,6 +174,25 @@ struct FilmDetailView: View {
                 Text(String(localized: "detail_locked_signed_in_body"))
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textSecondary)
+#if DEBUG
+                if let film = vm.film {
+                    Button {
+                        if let url = URL(string: "https://www.filmila.com/watch/\(film.id)") {
+                            openURL(url)
+                        }
+                    } label: {
+                        HStack(spacing: Spacing.sm) {
+                            Text(AppLanguage.prefersArabic ? "للاستمتاع بالفيلم · 13 ريال" : "Enjoy this film · SAR 13")
+                            Spacer()
+                            Image(systemName: AppLanguage.prefersArabic ? "arrow.up.left" : "arrow.up.right")
+                        }
+                        .font(.filmilaBodyMedium)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(FilmilaPrimaryButtonStyle())
+                    .accessibilityHint(AppLanguage.prefersArabic ? "يفتح صفحة الفيلم في الموقع للتجربة" : "Opens the film webpage for testing")
+                }
+#endif
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
