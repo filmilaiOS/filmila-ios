@@ -78,17 +78,8 @@ struct MenuDrawerView: View {
             drawerLink(String(localized: "shell_browse_films")) {
                 shellNavigation.navigateBrowse(.films)
             }
-            drawerLink(String(localized: "shell_browse_collections")) {
-                shellNavigation.navigateBrowse(.collections)
-            }
             drawerLink(String(localized: "shell_browse_genres")) {
                 shellNavigation.navigateBrowse(.genres)
-            }
-            drawerLink(String(localized: "shell_browse_moods")) {
-                shellNavigation.navigateBrowse(.moods)
-            }
-            drawerLink(String(localized: "shell_browse_themes")) {
-                shellNavigation.navigateBrowse(.themes)
             }
             drawerLink(String(localized: "shell_browse_my_list")) {
                 shellNavigation.navigateBrowse(.myList)
@@ -135,15 +126,6 @@ struct MenuDrawerView: View {
                 }
             }
 
-            drawerLink(String(localized: "shell_about_filmila")) {
-                shellNavigation.navigateBrowse(.about)
-            }
-            drawerLink(String(localized: "shell_partners")) {
-                shellNavigation.navigateBrowse(.partners)
-            }
-            drawerLink(String(localized: "shell_help_center")) {
-                shellNavigation.navigateBrowse(.help)
-            }
         }
         .padding(.top, Spacing.md)
     }
