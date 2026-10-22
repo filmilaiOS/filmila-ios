@@ -236,3 +236,6 @@
 "community_delete_comment" = "حذف التعليق";
 "community_delete_comment_confirm" = "هل تريد حذف تعليقك؟";
 "community_cancel" = "إلغاء";
+"detail_comment_options" = "خيارات التعليق";
+"detail_comment_delete" = "حذف";
+"detail_comment_delete_warning" = "سيتم حذف هذا التعليق نهائيًا.";
