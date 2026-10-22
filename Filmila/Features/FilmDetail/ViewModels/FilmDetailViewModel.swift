@@ -152,6 +152,15 @@ final class FilmDetailViewModel: ObservableObject {
         }
     }
 
+    func deleteComment(id: UUID) async {
+        do {
+            try await filmsRepo.deleteComment(id: id, filmId: filmId)
+            comments = try await filmsRepo.fetchCommentsWithAuthors(filmId: filmId)
+        } catch {
+            errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
     func setErrorMessage(_ message: String?) {
         errorMessage = message
     }
