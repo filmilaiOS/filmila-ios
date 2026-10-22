@@ -236,3 +236,6 @@
 "community_delete_comment" = "Delete comment";
 "community_delete_comment_confirm" = "Delete your comment?";
 "community_cancel" = "Cancel";
+"detail_comment_options" = "Comment options";
+"detail_comment_delete" = "Delete";
+"detail_comment_delete_warning" = "This comment will be permanently removed.";
