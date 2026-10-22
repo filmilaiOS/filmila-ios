@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CommentCell: View {
     let comment: CommentDisplay
+    var canDelete: Bool = false
+    var onDelete: (() -> Void)? = nil
 
     private static let relativeFormatter: RelativeDateTimeFormatter = {
         let f = RelativeDateTimeFormatter()
@@ -46,6 +48,21 @@ struct CommentCell: View {
                     Text(Self.relativeFormatter.localizedString(for: comment.createdAt, relativeTo: Date()))
                         .font(.filmilaCaption)
                         .foregroundStyle(FilmilaColors.textMuted)
+                    Spacer(minLength: 0)
+                    if canDelete, let onDelete {
+                        Menu {
+                            Button(role: .destructive, action: onDelete) {
+                                Label("Delete comment", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.filmilaBodyMedium)
+                                .foregroundStyle(FilmilaColors.textSecondary)
+                                .frame(width: 36, height: 36)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel("Comment options")
+                    }
                 }
                 Text(comment.content)
                     .font(.filmilaBody)
