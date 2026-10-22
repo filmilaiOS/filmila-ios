@@ -167,12 +167,12 @@ struct FilmDetailView: View {
 
     private var lockedAccessCard: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(String(localized: "detail_locked_title"))
+            Text(AppLanguage.prefersArabic ? "الفيلم غير متاح للمشاهدة على حسابك حاليًا" : "This film is not available to watch on your account yet.")
                 .font(.filmilaBodyMedium)
                 .foregroundStyle(FilmilaColors.textPrimary)
 
             if auth.session == nil {
-                Text(String(localized: "detail_locked_guest_body"))
+                Text(AppLanguage.prefersArabic ? "سجّل الدخول للتحقق من الأفلام المتاحة لحسابك." : "Sign in to check which films are available on your account.")
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textSecondary)
 
@@ -181,7 +181,7 @@ struct FilmDetailView: View {
                 }
                 .buttonStyle(FilmilaSecondaryButtonStyle(height: 42))
             } else {
-                Text(String(localized: "detail_locked_signed_in_body"))
+                Text(AppLanguage.prefersArabic ? "يمكنك مشاهدة الأفلام التي حصلت على حق مشاهدتها مسبقًا. إذا سبق لك الحصول على هذا الفيلم، تأكد من تسجيل الدخول بالحساب نفسه." : "You can watch films you have already obtained access to. If you have access to this film, make sure you are signed in with the same account.")
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textSecondary)
 #if DEBUG
