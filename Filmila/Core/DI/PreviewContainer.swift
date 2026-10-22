@@ -202,6 +202,7 @@ private final class PreviewFilmsRepository: FilmsRepositoryProtocol {
     }
 
     func insertComment(filmId: Int, text: String) async throws {}
+    func deleteComment(id: UUID, filmId: Int) async throws {}
 
     func isFilmInWatchlist(filmId: Int) async throws -> Bool {
         watchlistIds.contains(filmId)
