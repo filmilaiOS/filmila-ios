@@ -29,6 +29,7 @@ protocol FilmsRepositoryProtocol: AnyObject {
     func fetchUserFilmRating(filmId: Int) async throws -> Int?
     func upsertUserFilmRating(filmId: Int, rating: Int) async throws
     func insertComment(filmId: Int, text: String) async throws
+    func deleteComment(id: UUID, filmId: Int) async throws
     func isFilmInWatchlist(filmId: Int) async throws -> Bool
     func isFilmInFavorites(filmId: Int) async throws -> Bool
 }
@@ -320,6 +321,16 @@ final class LiveFilmsRepository: FilmsRepositoryProtocol {
             comment: text
         )
         try await client.from("comments").insert(row).execute()
+    }
+
+    func deleteComment(id: UUID, filmId: Int) async throws {
+        let userId = try await currentUserId()
+        try await client.from("comments")
+            .delete()
+            .eq("id", value: id.uuidString)
+            .eq("film_id", value: filmId)
+            .eq("viewer_id", value: userId.uuidString)
+            .execute()
     }
 
     func isFilmInWatchlist(filmId: Int) async throws -> Bool {
