@@ -12,6 +12,7 @@ struct FilmDetailView: View {
     @State private var playbackFilm: Film?
     @State private var userStarBinding: Int = 0
     @State private var showRatingSheet = false
+    @State private var commentPendingDeletion: UUID?
 
     init(filmId: Int, container: AppContainer) {
         self.container = container
@@ -39,9 +40,7 @@ struct FilmDetailView: View {
                         }
                         descriptionSection(film: film)
                         ratingReviewsSection
-#if DEBUG
                         commentsSection
-#endif
                     }
                     .padding(.bottom, Spacing.xxl)
                 }
@@ -53,6 +52,19 @@ struct FilmDetailView: View {
                     vm.clearRatingFeedbackMessage()
                 }) {
                     ratingSheet
+                }
+                .alert("Delete comment?", isPresented: Binding(
+                    get: { commentPendingDeletion != nil },
+                    set: { if !$0 { commentPendingDeletion = nil } }
+                )) {
+                    Button("Cancel", role: .cancel) { commentPendingDeletion = nil }
+                    Button("Delete", role: .destructive) {
+                        guard let id = commentPendingDeletion else { return }
+                        commentPendingDeletion = nil
+                        Task { await vm.deleteComment(id: id) }
+                    }
+                } message: {
+                    Text("This comment will be permanently removed.")
                 }
                 .onChange(of: scenePhase) { newPhase in
                     guard newPhase == .active else { return }
@@ -317,7 +329,11 @@ struct FilmDetailView: View {
                 .padding(.horizontal, Spacing.lg)
 
             ForEach(vm.comments) { comment in
-                CommentCell(comment: comment)
+                CommentCell(
+                    comment: comment,
+                    canDelete: auth.session?.user.id == comment.userId,
+                    onDelete: { commentPendingDeletion = comment.id }
+                )
                     .padding(.horizontal, Spacing.lg)
             }
 
