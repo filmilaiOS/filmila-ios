@@ -4,7 +4,6 @@ struct FilmDetailView: View {
     private let container: AppContainer
 
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var networkMonitor: NetworkMonitor
     @EnvironmentObject private var auth: AuthService
     @Environment(\.shellNavigation) private var shellNavigation
@@ -14,6 +13,9 @@ struct FilmDetailView: View {
     @State private var userStarBinding: Int = 0
     @State private var showRatingSheet = false
     @State private var commentPendingDeletion: UUID?
+#if DEBUG
+    @State private var checkoutURL: CheckoutURLItem?
+#endif
 
     init(filmId: Int, container: AppContainer) {
         self.container = container
@@ -67,6 +69,14 @@ struct FilmDetailView: View {
                 } message: {
                     Text(String(localized: "detail_comment_delete_warning"))
                 }
+#if DEBUG
+                .sheet(item: $checkoutURL) { url in
+                    SafariCheckoutView(url: url.url) {
+                        checkoutURL = nil
+                        Task { await vm.checkAccess() }
+                    }
+                }
+#endif
                 .onChange(of: scenePhase) { newPhase in
                     guard newPhase == .active else { return }
                     Task { await vm.checkAccess() }
@@ -177,9 +187,10 @@ struct FilmDetailView: View {
 #if DEBUG
                 if let film = vm.film {
                     Button {
-                        if let url = URL(string: "https://www.filmila.com/watch/\(film.id)") {
-                            openURL(url)
-                        }
+                        guard let token = auth.session?.accessToken,
+                              let url = FilmWebPurchaseURL.purchaseURL(forFilmId: film.id, accessToken: token)
+                        else { return }
+                        checkoutURL = CheckoutURLItem(url: url)
                     } label: {
                         HStack(spacing: Spacing.sm) {
                             Text(AppLanguage.prefersArabic ? "للاستمتاع بالفيلم · 13 ريال" : "Enjoy this film · SAR 13")
@@ -390,5 +401,12 @@ struct FilmDetailView: View {
             .environmentObject(PreviewContainer().deepLinkHandler)
     }
     .preferredColorScheme(.dark)
+}
+#endif
+
+#if DEBUG
+private struct CheckoutURLItem: Identifiable {
+    let url: URL
+    var id: String { url.absoluteString }
 }
 #endif
