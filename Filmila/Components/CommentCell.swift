@@ -52,7 +52,7 @@ struct CommentCell: View {
                     if canDelete, let onDelete {
                         Menu {
                             Button(role: .destructive, action: onDelete) {
-                                Label("Delete comment", systemImage: "trash")
+                                Label(String(localized: "community_delete_comment"), systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "ellipsis")
@@ -61,7 +61,7 @@ struct CommentCell: View {
                                 .frame(width: 36, height: 36)
                                 .contentShape(Rectangle())
                         }
-                        .accessibilityLabel("Comment options")
+                        .accessibilityLabel(Text(String(localized: "detail_comment_options")))
                     }
                 }
                 Text(comment.content)
