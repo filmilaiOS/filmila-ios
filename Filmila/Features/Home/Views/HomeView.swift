@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var auth: AuthService
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var featuredIndex = 0
     @StateObject private var vm: HomeViewModel
     @Binding private var selectedBrowseTab: HomeBrowseTab
     var onWatchlistAuthRequired: () -> Void
@@ -45,6 +47,20 @@ struct HomeView: View {
         .task {
             await vm.loadAll()
         }
+        .task(id: scenePhase == .active && selectedBrowseTab == .films && vm.featured.count > 1) {
+            guard scenePhase == .active, selectedBrowseTab == .films, vm.featured.count > 1 else { return }
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(6)) }
+                catch { break }
+                guard !Task.isCancelled else { break }
+                withAnimation(.easeInOut(duration: 0.45)) {
+                    featuredIndex = (featuredIndex + 1) % vm.featured.count
+                }
+            }
+        }
+        .onChange(of: vm.featured.map(\.id)) { _ in
+            featuredIndex = 0
+        }
     }
 
     @ViewBuilder
@@ -66,12 +82,33 @@ struct HomeView: View {
         if vm.isLoading, vm.featured.isEmpty {
             LoadingShimmer(width: nil, height: UIScreen.main.bounds.height * 0.48, cornerRadius: 0)
                 .frame(height: UIScreen.main.bounds.height * 0.48)
-        } else if let featured = vm.featured.first {
-            FeaturedHeroSection(
-                film: featured,
-                averageRating: vm.averageRatingByFilmId[featured.id],
-                onWatchlistAuthRequired: onWatchlistAuthRequired
-            )
+        } else if !vm.featured.isEmpty {
+            VStack(spacing: Spacing.sm) {
+                TabView(selection: $featuredIndex) {
+                    ForEach(Array(vm.featured.enumerated()), id: \.element.id) { index, film in
+                        FeaturedHeroSection(
+                            film: film,
+                            averageRating: vm.averageRatingByFilmId[film.id],
+                            onWatchlistAuthRequired: onWatchlistAuthRequired
+                        )
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .frame(height: min(UIScreen.main.bounds.height * 0.52, UIScreen.main.bounds.height < 720 ? 340 : 480))
+
+                if vm.featured.count > 1 {
+                    HStack(spacing: 7) {
+                        ForEach(vm.featured.indices, id: \.self) { index in
+                            Circle()
+                                .fill(index == featuredIndex ? FilmilaColors.textPrimary : FilmilaColors.textPrimary.opacity(0.3))
+                                .frame(width: index == featuredIndex ? 7 : 6, height: index == featuredIndex ? 7 : 6)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Film \(featuredIndex + 1) of \(vm.featured.count)")
+                }
+            }
         }
 
         if auth.session != nil {
