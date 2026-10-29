@@ -51,7 +51,7 @@ struct MainTabView: View {
                 }
             },
             presentLogin: { authSheet = .login },
-            presentRegister: { authSheet = .register },
+            presentRegister: { authSheet = .login },
             navigateBrowse: handleBrowseDestination
         )
     }
@@ -92,7 +92,7 @@ struct MainTabView: View {
                 AppShellView(isDrawerOpen: $isDrawerOpen) {
                     LibraryView(
                         container: container,
-                        onCreateAccount: { authSheet = .register },
+                        onCreateAccount: { authSheet = .login },
                         onLogIn: { authSheet = .login }
                     )
                 }
@@ -165,7 +165,7 @@ struct MainTabView: View {
                     case .login:
                         LoginView(authService: auth)
                     case .register:
-                        RegisterView(authService: auth)
+                        LoginView(authService: auth)
                     }
                 }
                 .toolbar {
@@ -295,9 +295,6 @@ private struct ProfileLoggedOutView: View {
                 .buttonStyle(FilmilaPrimaryButtonStyle())
                 .padding(.horizontal, Spacing.lg)
 
-            Button(String(localized: "auth_create_account"), action: onCreateAccount)
-                .buttonStyle(FilmilaSecondaryButtonStyle())
-                .padding(.horizontal, Spacing.lg)
 
             Spacer(minLength: 0)
         }
