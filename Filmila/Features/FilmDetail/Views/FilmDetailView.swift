@@ -13,9 +13,6 @@ struct FilmDetailView: View {
     @State private var userStarBinding: Int = 0
     @State private var showRatingSheet = false
     @State private var commentPendingDeletion: UUID?
-#if DEBUG
-    @State private var checkoutURL: CheckoutURLItem?
-#endif
 
     init(filmId: Int, container: AppContainer) {
         self.container = container
@@ -69,14 +66,6 @@ struct FilmDetailView: View {
                 } message: {
                     Text(String(localized: "detail_comment_delete_warning"))
                 }
-#if DEBUG
-                .sheet(item: $checkoutURL) { url in
-                    SafariCheckoutView(url: url.url) {
-                        checkoutURL = nil
-                        Task { await vm.checkAccess() }
-                    }
-                }
-#endif
                 .onChange(of: scenePhase) { newPhase in
                     guard newPhase == .active else { return }
                     Task { await vm.checkAccess() }
@@ -184,26 +173,6 @@ struct FilmDetailView: View {
                 Text(AppLanguage.prefersArabic ? "يمكنك مشاهدة الأفلام التي حصلت على حق مشاهدتها مسبقًا. إذا سبق لك الحصول على هذا الفيلم، تأكد من تسجيل الدخول بالحساب نفسه." : "You can watch films you have already obtained access to. If you have access to this film, make sure you are signed in with the same account.")
                     .font(.filmilaBody)
                     .foregroundStyle(FilmilaColors.textSecondary)
-#if DEBUG
-                if let film = vm.film {
-                    Button {
-                        guard let token = auth.session?.accessToken,
-                              let url = FilmWebPurchaseURL.purchaseURL(forFilmId: film.id, accessToken: token)
-                        else { return }
-                        checkoutURL = CheckoutURLItem(url: url)
-                    } label: {
-                        HStack(spacing: Spacing.sm) {
-                            Text(AppLanguage.prefersArabic ? "للاستمتاع بالفيلم · 13 ريال" : "Enjoy this film · SAR 13")
-                            Spacer()
-                            Image(systemName: AppLanguage.prefersArabic ? "arrow.up.left" : "arrow.up.right")
-                        }
-                        .font(.filmilaBodyMedium)
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(FilmilaPrimaryButtonStyle())
-                    .accessibilityHint(AppLanguage.prefersArabic ? "يفتح صفحة الفيلم في الموقع للتجربة" : "Opens the film webpage for testing")
-                }
-#endif
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -404,9 +373,3 @@ struct FilmDetailView: View {
 }
 #endif
 
-#if DEBUG
-private struct CheckoutURLItem: Identifiable {
-    let url: URL
-    var id: String { url.absoluteString }
-}
-#endif
