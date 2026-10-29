@@ -55,14 +55,6 @@ struct MenuDrawerView: View {
             }
             .buttonStyle(FilmilaWhiteButtonStyle())
 
-            Button {
-                onClose()
-                shellNavigation.presentRegister()
-            } label: {
-                Text(String(localized: "auth_create_account_link"))
-                    .font(.filmilaBodyMedium)
-            }
-            .buttonStyle(FilmilaWhiteOutlineButtonStyle())
         }
         .padding(.top, Spacing.sm)
     }
