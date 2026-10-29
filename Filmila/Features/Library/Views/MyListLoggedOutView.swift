@@ -22,12 +22,6 @@ struct MyListLoggedOutView: View {
                     .multilineTextAlignment(.center)
 
                 HStack(spacing: Spacing.sm) {
-                    Button(action: onCreateAccount) {
-                        Text(String(localized: "auth_create_account"))
-                            .font(.filmilaBodyMedium)
-                    }
-                    .buttonStyle(FilmilaWhiteButtonStyle())
-
                     Button(action: onLogIn) {
                         Text(String(localized: "auth_sign_in"))
                             .font(.filmilaBodyMedium)
