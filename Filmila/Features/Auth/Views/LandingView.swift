@@ -42,14 +42,7 @@ struct LandingView: View {
                     .buttonStyle(FilmilaPrimaryButtonStyle())
                     .padding(.horizontal, Spacing.lg)
 
-                    NavigationLink {
-                        RegisterView(authService: auth)
-                    } label: {
-                        Text(String(localized: "auth_create_account_link"))
-                            .font(.filmilaBodyMedium)
-                            .foregroundStyle(FilmilaColors.accent)
-                    }
-                    .padding(.bottom, Spacing.xl)
+                    Spacer().frame(height: Spacing.xl)
                 }
             }
         }
